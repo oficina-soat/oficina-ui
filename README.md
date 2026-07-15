@@ -25,6 +25,13 @@ npm run validate
 
 Esse comando verifica formatação, lint, fronteiras arquiteturais, testes com cobertura, build de produção e vulnerabilidades das dependências de produção.
 
+Para atualizar os clientes após uma mudança nos contratos canônicos:
+
+```bash
+npm run api:sync
+npm run api:generate
+```
+
 ## Princípio arquitetural
 
 O frontend não contém regras de negócio. Ele coordena a experiência, chama as APIs e apresenta o resultado canônico. Autorização, cálculos, transições, estoque, Saga e pagamentos permanecem nos backends.

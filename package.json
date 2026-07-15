@@ -5,6 +5,8 @@
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build --configuration production",
+    "api:sync": "node scripts/sync-openapi-contracts.mjs",
+    "api:generate": "node scripts/generate-openapi-clients.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "watch": "ng build --watch --configuration development",
@@ -13,7 +15,7 @@
     "test:architecture": "node scripts/validate-architecture.mjs",
     "lint": "ng lint",
     "audit:production": "npm audit --omit=dev --audit-level=high",
-    "validate": "npm run format:check && npm run lint && npm run test:architecture && npm run test:ci && npm run build && npm run audit:production"
+    "validate": "npm run api:generate && npm run format:check && npm run lint && npm run test:architecture && npm run test:ci && npm run build && npm run audit:production"
   },
   "private": true,
   "engines": {
@@ -36,6 +38,7 @@
     "@angular/cli": "^22.0.6",
     "@angular/compiler-cli": "^22.0.0",
     "@eslint/js": "^10.0.1",
+    "@hey-api/openapi-ts": "^0.99.0",
     "@vitest/coverage-v8": "^4.1.10",
     "angular-eslint": "22.1.0",
     "eslint": "^10.6.0",

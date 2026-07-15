@@ -46,3 +46,15 @@ A UI deve apresentar ações fornecidas ou aceitas pela API e tratar a eventual 
 - auditoria das dependências de produção.
 
 O comando `npm run validate` executa o conjunto obrigatório. Testes de adapters, mappers, acessibilidade e E2E devem ser acrescentados junto aos fluxos que exercitam, sem esperar uma etapa posterior de estabilização.
+
+## Contratos OpenAPI
+
+Os snapshots em `contracts/openapi` vêm dos contratos canônicos do `oficina-platform`. O fluxo é:
+
+1. `npm run api:sync` copia os contratos do repositório irmão, aceitando `OFICINA_PLATFORM_DIR` quando ele estiver em outro caminho;
+2. `npm run api:generate` recria os tipos contratuais dentro de `infrastructure/generated` de cada feature;
+3. adapters HTTP escritos manualmente consomem esses tipos e mapeiam DTOs para contratos da camada `application`.
+
+O transporte não é gerado porque o runtime disponível do gerador ainda não é compatível com `exactOptionalPropertyTypes` do TypeScript 6. Essa limitação não justifica reduzir o strict mode nem adicionar supressões ao código.
+
+Arquivos gerados são versionados para builds reproduzíveis e não devem ser editados manualmente. A configuração de runtime deve fornecer `authBaseUrl` para as rotas `/auth` e `apiBaseUrl` já com o prefixo público `/api/v1`.
