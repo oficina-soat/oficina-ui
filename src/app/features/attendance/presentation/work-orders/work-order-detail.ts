@@ -103,33 +103,35 @@ const commandMessages = {
         <section class="actions" aria-labelledby="actions-title">
           <h2 id="actions-title">Ações da OS</h2>
           <p>A API valida se a ação é permitida para o estado atual.</p>
-          <form [formGroup]="stateForm" (ngSubmit)="changeState()" novalidate>
-            <app-form-field
-              inputId="next-state"
-              label="Novo estado"
-              [required]="true"
-              [error]="
-                stateForm.controls.state.touched && stateForm.controls.state.invalid
-                  ? 'Selecione um estado.'
-                  : undefined
-              "
-            >
-              <select id="next-state" formControlName="state">
-                <option value="">Selecione</option>
-                @for (state of states; track state[0]) {
-                  @if (stateAllowed(state[0])) {
-                    <option [value]="state[0]">{{ state[1] }}</option>
+          @if (hasStateActions()) {
+            <form [formGroup]="stateForm" (ngSubmit)="changeState()" novalidate>
+              <app-form-field
+                inputId="next-state"
+                label="Novo estado"
+                [required]="true"
+                [error]="
+                  stateForm.controls.state.touched && stateForm.controls.state.invalid
+                    ? 'Selecione um estado.'
+                    : undefined
+                "
+              >
+                <select id="next-state" formControlName="state">
+                  <option value="">Selecione</option>
+                  @for (state of states; track state[0]) {
+                    @if (stateAllowed(state[0])) {
+                      <option [value]="state[0]">{{ state[1] }}</option>
+                    }
                   }
-                }
-              </select>
-            </app-form-field>
-            <app-form-field inputId="state-reason" label="Motivo">
-              <input id="state-reason" formControlName="reason" />
-            </app-form-field>
-            <button class="ui-button ui-button--primary" type="submit" [disabled]="saving()">
-              Alterar estado
-            </button>
-          </form>
+                </select>
+              </app-form-field>
+              <app-form-field inputId="state-reason" label="Motivo">
+                <input id="state-reason" formControlName="reason" />
+              </app-form-field>
+              <button class="ui-button ui-button--primary" type="submit" [disabled]="saving()">
+                Alterar estado
+              </button>
+            </form>
+          }
 
           <div class="cancel-action" [hidden]="!item.allowedActions.includes('CANCELAR')">
             <app-form-field inputId="cancel-reason" label="Motivo do cancelamento">
@@ -333,5 +335,9 @@ export class WorkOrderDetail implements OnInit {
       RECEBIDA: [],
     } as const;
     return required[state].some((action) => actions.includes(action));
+  }
+
+  protected hasStateActions(): boolean {
+    return this.states.some(([state]) => this.stateAllowed(state));
   }
 }
