@@ -1,8 +1,6 @@
 .request-page {
   display: grid;
-  min-height: 100dvh;
-  place-items: center;
-  padding: var(--space-4);
+  place-items: start;
 }
 
 .request-card {

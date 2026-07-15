@@ -4,6 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { SessionStore } from '../auth/session.store';
+import { ApiAvailabilityStore } from './api-availability.store';
 import type { ApiError } from './api-error';
 import {
   apiErrorInterceptor,
@@ -17,6 +18,7 @@ describe('interceptors HTTP', () => {
   let http: HttpClient;
   let httpTesting: HttpTestingController;
   let session: SessionStore;
+  let availability: ApiAvailabilityStore;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -35,6 +37,22 @@ describe('interceptors HTTP', () => {
     http = TestBed.inject(HttpClient);
     httpTesting = TestBed.inject(HttpTestingController);
     session = TestBed.inject(SessionStore);
+    availability = TestBed.inject(ApiAvailabilityStore);
+  });
+
+  it('informa indisponibilidade global em falha técnica e limpa após recuperação', () => {
+    http.get('/api/v1/falha').subscribe({ error: () => undefined });
+    httpTesting
+      .expectOne('/api/v1/falha')
+      .flush(
+        { code: 'UNAVAILABLE', message: 'Serviço indisponível.', correlationId: 'corr-503' },
+        { status: 503, statusText: 'Service Unavailable' },
+      );
+    expect(availability.unavailable()).toEqual({ correlationId: 'corr-503' });
+
+    http.get('/api/v1/recuperado').subscribe();
+    httpTesting.expectOne('/api/v1/recuperado').flush({});
+    expect(availability.unavailable()).toBeNull();
   });
 
   it('propaga sessão em memória e gera correlação sem idempotência em leitura', () => {

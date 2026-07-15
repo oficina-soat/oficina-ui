@@ -9,12 +9,15 @@ describe('readSessionIdentity', () => {
   it('aceita apenas papéis operacionais conhecidos e remove duplicatas', () => {
     expect(
       readSessionIdentity(
-        tokenWith({ groups: ['administrativo', 'mecanico', 'administrativo', 'externo'] }),
+        tokenWith({
+          sub: '84191404067',
+          groups: ['administrativo', 'mecanico', 'administrativo', 'externo'],
+        }),
       ),
-    ).toEqual({ roles: ['administrativo', 'mecanico'] });
+    ).toEqual({ roles: ['administrativo', 'mecanico'], maskedSubject: '***.***.***-67' });
   });
 
   it('não concede papel quando o token é inválido', () => {
-    expect(readSessionIdentity('token-invalido')).toEqual({ roles: [] });
+    expect(readSessionIdentity('token-invalido')).toEqual({ roles: [], maskedSubject: null });
   });
 });

@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { Alert, FormField } from '../../../../shared/ui';
 import {
@@ -27,6 +27,7 @@ const errorMessages: Readonly<Record<AuthenticationFailureReason, string>> = {
 export class Login {
   private readonly authenticate = inject(AUTHENTICATE_USER);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   protected readonly pending = signal(false);
   protected readonly failure = signal<string | null>(null);
   protected readonly correlationId = signal<string | null>(null);
@@ -52,7 +53,8 @@ export class Login {
     this.correlationId.set(null);
     try {
       await this.authenticate.execute(this.form.getRawValue());
-      await this.router.navigateByUrl('/session');
+      const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
+      await this.router.navigateByUrl(isSafeReturnUrl(returnUrl) ? returnUrl : '/session');
     } catch (error: unknown) {
       const failure =
         error instanceof AuthenticationError
@@ -67,3 +69,6 @@ export class Login {
     }
   }
 }
+
+const isSafeReturnUrl = (value: string | null): value is string =>
+  value !== null && value.startsWith('/') && !value.startsWith('//');

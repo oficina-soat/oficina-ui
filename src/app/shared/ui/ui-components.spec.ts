@@ -1,10 +1,12 @@
 import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { describe, expect, it, vi } from 'vitest';
 
 import { Alert } from './alert/alert';
 import { Confirmation } from './confirmation/confirmation';
 import { FormField } from './form-field/form-field';
 import { Pagination } from './pagination/pagination';
+import { Shell } from './shell/shell';
 
 describe('componentes básicos de UI', () => {
   it('usa alert para falha e status para informação', () => {
@@ -50,5 +52,25 @@ describe('componentes básicos de UI', () => {
     const dialog = fixture.nativeElement.querySelector('[role="alertdialog"]');
     expect(dialog.getAttribute('aria-modal')).toBe('true');
     expect(dialog.getAttribute('aria-labelledby')).toBeTruthy();
+  });
+
+  it('oferece navegação responsiva e breadcrumb acessíveis', () => {
+    TestBed.configureTestingModule({ providers: [provideRouter([])] });
+    const fixture = TestBed.createComponent(Shell);
+    fixture.componentRef.setInput('userLabel', 'Mecânico');
+    fixture.componentRef.setInput('navigation', [{ label: 'Início', href: '/session' }]);
+    fixture.componentRef.setInput('breadcrumb', ['Início', 'Fila']);
+    fixture.detectChanges();
+
+    const menuButton = fixture.nativeElement.querySelector(
+      '.ui-shell__menu-button',
+    ) as HTMLButtonElement;
+    expect(menuButton.getAttribute('aria-expanded')).toBe('false');
+    menuButton.click();
+    fixture.detectChanges();
+    expect(menuButton.getAttribute('aria-expanded')).toBe('true');
+    expect(
+      fixture.nativeElement.querySelector('[aria-label="Caminho da página"]').textContent,
+    ).toContain('Fila');
   });
 });

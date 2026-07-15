@@ -36,3 +36,5 @@ Botões preservam o elemento nativo `button` e usam as classes `ui-button--prima
 - Animações respeitam `prefers-reduced-motion`.
 
 Os componentes compartilhados são exercitados por testes unitários. A página inicial passou a ser o login operacional em `UI-AUTH-001`; exemplos visuais não devem competir com rotas reais da aplicação.
+
+O `app-shell` usa links do Angular Router, marca a rota atual, oferece menu recolhível em telas estreitas e expõe breadcrumb semântico. A composição da aplicação fornece apenas itens compatíveis com os papéis da sessão e mostra a identidade pelo CPF mascarado; o componente visual não interpreta JWT nem decide autorização.

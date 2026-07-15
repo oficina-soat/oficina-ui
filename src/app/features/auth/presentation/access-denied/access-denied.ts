@@ -21,9 +21,7 @@ import { Alert } from '../../../../shared/ui';
   styles: `
     .access-page {
       display: grid;
-      min-height: 100dvh;
-      place-items: center;
-      padding: var(--space-4);
+      place-items: start;
     }
     .access-card {
       display: grid;

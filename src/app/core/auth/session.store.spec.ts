@@ -26,11 +26,16 @@ describe('SessionStore', () => {
   });
 
   it('expõe os papéis decodificados somente para navegação visual', () => {
-    const payload = btoa(JSON.stringify({ groups: ['administrativo', 'recepcionista'] }));
+    const payload = btoa(
+      JSON.stringify({ sub: '84191404067', groups: ['administrativo', 'recepcionista'] }),
+    );
     const store = TestBed.inject(SessionStore);
     store.start(`header.${payload}.signature`, 3600);
 
-    expect(store.identity()).toEqual({ roles: ['administrativo', 'recepcionista'] });
+    expect(store.identity()).toEqual({
+      roles: ['administrativo', 'recepcionista'],
+      maskedSubject: '***.***.***-67',
+    });
     expect(store.hasAnyRole(['administrativo'])).toBe(true);
     expect(store.hasAnyRole(['mecanico'])).toBe(false);
     store.clear();

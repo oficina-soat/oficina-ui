@@ -13,17 +13,10 @@
         >.
       </p>
       <p>Os fluxos operacionais serão adicionados nos próximos incrementos.</p>
-      @if (session.hasAnyRole(['administrativo'])) {
-        <a class="ui-button ui-button--primary" routerLink="/administracao/ativacoes/nova"
-          >Gerar token de ativação</a
-        >
-      }
-      <button class="ui-button ui-button--secondary" type="button" (click)="logout()">Sair</button>
     } @else {
       <app-alert title="Sessão expirada" tone="warning">
         <p>Entre novamente para continuar.</p>
       </app-alert>
-      <a class="ui-button ui-button--primary" routerLink="/login">Voltar ao login</a>
     }
   </section>
 </main>
