@@ -23,6 +23,8 @@ const statusLabels: Readonly<Record<ExecutionStatus, string>> = {
 const failureMessages = {
   INVALID_INPUT: 'O filtro informado não foi aceito.',
   UNAUTHENTICATED: 'Sua sessão expirou.',
+  NOT_FOUND: 'A fila solicitada não foi encontrada.',
+  CONFLICT: 'A fila não pôde ser consultada neste momento.',
   SERVICE_UNAVAILABLE: 'O serviço de execução está indisponível.',
   UNKNOWN: 'Não foi possível consultar a fila.',
 } as const;
@@ -92,7 +94,7 @@ const failureMessages = {
                   <td>{{ shortId(entry.ordemServicoId) }}</td>
                   <td>{{ statusLabel(entry.status) }}</td>
                   <td>{{ entry.criadoEm | date: 'dd/MM/yyyy HH:mm' }}</td>
-                  <td><a [routerLink]="['/ordens-servico', entry.ordemServicoId]">Abrir OS</a></td>
+                  <td><a [routerLink]="['/execucoes', entry.id]">Executar</a></td>
                 </tr>
               }
             </tbody>

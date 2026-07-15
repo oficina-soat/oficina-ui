@@ -5,6 +5,16 @@ export type {
   ExecutionGateway,
   ExecutionStatus,
   ExecutionFailureReason,
+  ExecutionDetails,
+  ExecutionCommand,
   FilaExecucao,
 } from './execution-gateway';
-export { ExecutionOperationError, ListExecutionQueue } from './execution-gateway';
+export {
+  CompleteDiagnosis,
+  CompleteRepair,
+  ExecutionOperationError,
+  GetExecution,
+  ListExecutionQueue,
+  StartDiagnosis,
+  StartRepair,
+} from './execution-gateway';

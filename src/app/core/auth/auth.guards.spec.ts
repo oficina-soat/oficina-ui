@@ -34,6 +34,7 @@ describe('guards de autenticação', () => {
   it('redireciona visitante ao login preservando a rota de retorno', async () => {
     configureRouter();
     const router = TestBed.inject(Router);
+    TestBed.inject(SessionStore).clear();
 
     await router.navigateByUrl('/session');
 

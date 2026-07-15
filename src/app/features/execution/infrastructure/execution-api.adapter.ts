@@ -4,14 +4,21 @@ import { firstValueFrom } from 'rxjs';
 
 import { RUNTIME_CONFIG } from '../../../core/config/runtime-config';
 import { ApiError } from '../../../core/http/api-error';
+import { idempotentCommandContext } from '../../../core/http/request-context';
 import {
   ExecutionOperationError,
   type ConsultarFilaQuery,
+  type ExecutionCommand,
+  type ExecutionDetails,
   type ExecutionFailureReason,
   type ExecutionGateway,
   type FilaExecucao,
 } from '../application';
-import type { ConsultarFilaExecucaoResponse, FilaExecucaoItem } from './generated/types.gen';
+import type {
+  ConsultarFilaExecucaoResponse,
+  Execucao,
+  FilaExecucaoItem,
+} from './generated/types.gen';
 
 const mapFila = (item: FilaExecucaoItem): FilaExecucao => ({
   id: item.execucaoId,
@@ -20,6 +27,17 @@ const mapFila = (item: FilaExecucaoItem): FilaExecucao => ({
   ...(item.prioridade === undefined ? {} : { prioridade: item.prioridade }),
   posicao: item.posicao,
   criadoEm: item.criadoEm,
+});
+
+const mapExecution = (item: Execucao): ExecutionDetails => ({
+  id: item.execucaoId,
+  ordemServicoId: item.ordemServicoId,
+  status: item.status,
+  prioridade: item.prioridade ?? 100,
+  ...(item.diagnostico === undefined ? {} : { diagnostico: item.diagnostico }),
+  ...(item.observacoesReparo === undefined ? {} : { observacoesReparo: item.observacoesReparo }),
+  criadoEm: item.criadoEm,
+  atualizadoEm: item.atualizadoEm,
 });
 
 @Injectable({ providedIn: 'root' })
@@ -41,18 +59,77 @@ export class ExecutionApiAdapter implements ExecutionGateway {
       );
       return data.map(mapFila);
     } catch (error: unknown) {
-      if (!(error instanceof ApiError))
-        throw new ExecutionOperationError('SERVICE_UNAVAILABLE', null);
-      const reasons: Readonly<Record<number, ExecutionFailureReason>> = {
-        400: 'INVALID_INPUT',
-        401: 'UNAUTHENTICATED',
-      };
-      throw new ExecutionOperationError(
-        error.status === 0 || error.status >= 500
-          ? 'SERVICE_UNAVAILABLE'
-          : (reasons[error.status] ?? 'UNKNOWN'),
-        error.correlationId,
-      );
+      throw this.executionError(error);
     }
+  }
+
+  async consultarExecucao(id: string): Promise<ExecutionDetails> {
+    try {
+      return mapExecution(
+        await firstValueFrom(
+          this.http.get<Execucao>(`${this.config.apiBaseUrl}/execucoes/${encodeURIComponent(id)}`),
+        ),
+      );
+    } catch (error: unknown) {
+      throw this.executionError(error);
+    }
+  }
+
+  iniciarDiagnostico(command: ExecutionCommand): Promise<ExecutionDetails> {
+    return this.executeCommand(command, 'diagnostico/inicio', {});
+  }
+  concluirDiagnostico(command: ExecutionCommand): Promise<ExecutionDetails> {
+    return this.executeCommand(
+      command,
+      'diagnostico/conclusao',
+      command.notes ? { diagnostico: command.notes } : {},
+    );
+  }
+  iniciarReparo(command: ExecutionCommand): Promise<ExecutionDetails> {
+    return this.executeCommand(command, 'reparo/inicio', {});
+  }
+  concluirReparo(command: ExecutionCommand): Promise<ExecutionDetails> {
+    return this.executeCommand(
+      command,
+      'reparo/conclusao',
+      command.notes ? { observacoes: command.notes } : {},
+    );
+  }
+
+  private async executeCommand(
+    command: ExecutionCommand,
+    path: string,
+    body: object,
+  ): Promise<ExecutionDetails> {
+    try {
+      return mapExecution(
+        await firstValueFrom(
+          this.http.post<Execucao>(
+            `${this.config.apiBaseUrl}/execucoes/${encodeURIComponent(command.id)}/${path}`,
+            body,
+            { context: idempotentCommandContext(command.idempotencyKey) },
+          ),
+        ),
+      );
+    } catch (error: unknown) {
+      throw this.executionError(error);
+    }
+  }
+
+  private executionError(error: unknown): ExecutionOperationError {
+    if (!(error instanceof ApiError))
+      return new ExecutionOperationError('SERVICE_UNAVAILABLE', null);
+    const reasons: Readonly<Record<number, ExecutionFailureReason>> = {
+      400: 'INVALID_INPUT',
+      401: 'UNAUTHENTICATED',
+      404: 'NOT_FOUND',
+      409: 'CONFLICT',
+    };
+    return new ExecutionOperationError(
+      error.status === 0 || error.status >= 500
+        ? 'SERVICE_UNAVAILABLE'
+        : (reasons[error.status] ?? 'UNKNOWN'),
+      error.correlationId,
+    );
   }
 }

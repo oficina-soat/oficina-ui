@@ -75,6 +75,16 @@ export const routes: Routes = [
         title: 'Fila de execução | Oficina SOAT',
       },
       {
+        path: 'execucoes/:execucaoId',
+        canActivate: [roleGuard],
+        data: { roles: ['mecanico'], breadcrumb: 'Execução' },
+        loadComponent: () =>
+          import('./features/execution/presentation').then(
+            ({ ExecutionDetail }) => ExecutionDetail,
+          ),
+        title: 'Execução da oficina | Oficina SOAT',
+      },
+      {
         path: 'administracao/ativacoes/nova',
         canActivate: [roleGuard],
         data: { roles: ['administrativo'], breadcrumb: 'Ativação de credencial' },
