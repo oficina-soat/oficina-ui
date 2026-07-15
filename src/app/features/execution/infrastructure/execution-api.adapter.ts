@@ -38,6 +38,7 @@ const mapExecution = (item: Execucao): ExecutionDetails => ({
   ...(item.observacoesReparo === undefined ? {} : { observacoesReparo: item.observacoesReparo }),
   criadoEm: item.criadoEm,
   atualizadoEm: item.atualizadoEm,
+  allowedActions: item.acoesPermitidas,
 });
 
 @Injectable({ providedIn: 'root' })
@@ -93,6 +94,13 @@ export class ExecutionApiAdapter implements ExecutionGateway {
       command,
       'reparo/conclusao',
       command.notes ? { observacoes: command.notes } : {},
+    );
+  }
+  cancelar(command: ExecutionCommand): Promise<ExecutionDetails> {
+    return this.executeCommand(
+      command,
+      'cancelamento',
+      command.notes ? { motivo: command.notes } : {},
     );
   }
 

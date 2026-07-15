@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import {
+  CancelExecution,
   CompleteDiagnosis,
   CompleteRepair,
   GetExecution,
@@ -17,6 +18,7 @@ const gateway = (): ExecutionGateway => ({
   concluirDiagnostico: vi.fn().mockResolvedValue({ id: 'execucao-1' }),
   iniciarReparo: vi.fn().mockResolvedValue({ id: 'execucao-1' }),
   concluirReparo: vi.fn().mockResolvedValue({ id: 'execucao-1' }),
+  cancelar: vi.fn().mockResolvedValue({ id: 'execucao-1' }),
 });
 
 describe('casos de uso de execução', () => {
@@ -41,10 +43,12 @@ describe('casos de uso de execução', () => {
     await new CompleteDiagnosis(execution).execute(command);
     await new StartRepair(execution).execute(command);
     await new CompleteRepair(execution).execute(command);
+    await new CancelExecution(execution).execute(command);
 
     expect(execution.iniciarDiagnostico).toHaveBeenCalledWith(command);
     expect(execution.concluirDiagnostico).toHaveBeenCalledWith(command);
     expect(execution.iniciarReparo).toHaveBeenCalledWith(command);
     expect(execution.concluirReparo).toHaveBeenCalledWith(command);
+    expect(execution.cancelar).toHaveBeenCalledWith(command);
   });
 });

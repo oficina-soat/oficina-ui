@@ -24,7 +24,14 @@ export interface ExecutionDetails {
   readonly observacoesReparo?: string;
   readonly criadoEm: string;
   readonly atualizadoEm: string;
+  readonly allowedActions: readonly ExecutionAction[];
 }
+export type ExecutionAction =
+  | 'INICIAR_DIAGNOSTICO'
+  | 'CONCLUIR_DIAGNOSTICO'
+  | 'INICIAR_REPARO'
+  | 'CONCLUIR_REPARO'
+  | 'CANCELAR';
 
 export interface ConsultarFilaQuery {
   readonly status?: ExecutionStatus;
@@ -44,6 +51,7 @@ export interface ExecutionGateway {
   concluirDiagnostico(command: ExecutionCommand): Promise<ExecutionDetails>;
   iniciarReparo(command: ExecutionCommand): Promise<ExecutionDetails>;
   concluirReparo(command: ExecutionCommand): Promise<ExecutionDetails>;
+  cancelar(command: ExecutionCommand): Promise<ExecutionDetails>;
 }
 
 export type ExecutionFailureReason =
@@ -102,5 +110,12 @@ export class CompleteRepair {
   constructor(private readonly gateway: ExecutionGateway) {}
   execute(command: ExecutionCommand): Promise<ExecutionDetails> {
     return this.gateway.concluirReparo(command);
+  }
+}
+
+export class CancelExecution {
+  constructor(private readonly gateway: ExecutionGateway) {}
+  execute(command: ExecutionCommand): Promise<ExecutionDetails> {
+    return this.gateway.cancelar(command);
   }
 }

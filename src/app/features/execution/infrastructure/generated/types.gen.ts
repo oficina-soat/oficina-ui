@@ -71,7 +71,10 @@ export type Execucao = ExecucaoCreateRequest & {
     observacoesReparo?: string;
     criadoEm: string;
     atualizadoEm: string;
+    acoesPermitidas: Array<AcaoPermitidaExecucao>;
 };
+
+export type AcaoPermitidaExecucao = 'INICIAR_DIAGNOSTICO' | 'CONCLUIR_DIAGNOSTICO' | 'INICIAR_REPARO' | 'CONCLUIR_REPARO' | 'CANCELAR';
 
 export type FilaExecucaoItem = Execucao & {
     /**

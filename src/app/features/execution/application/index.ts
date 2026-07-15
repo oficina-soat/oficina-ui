@@ -10,6 +10,7 @@ export type {
   FilaExecucao,
 } from './execution-gateway';
 export {
+  CancelExecution,
   CompleteDiagnosis,
   CompleteRepair,
   ExecutionOperationError,

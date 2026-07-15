@@ -22,6 +22,7 @@ const order = {
   state: 'RECEBIDA' as const,
   createdAt: '2026-07-15T12:00:00Z',
   updatedAt: '2026-07-15T12:00:00Z',
+  allowedActions: ['INICIAR_DIAGNOSTICO', 'CANCELAR'] as const,
 };
 
 describe('WorkOrders', () => {
@@ -150,5 +151,12 @@ describe('WorkOrders', () => {
     expect(getHistory.execute).toHaveBeenCalledWith('ordem-1');
     expect(fixture.nativeElement.textContent).toContain('OS aberta');
     expect(fixture.nativeElement.textContent).toContain('Ações da OS');
+    const states = [...fixture.nativeElement.querySelectorAll('#next-state option')].map(
+      (option: HTMLOptionElement) => option.value,
+    );
+    expect(states).toEqual(['', 'EM_DIAGNOSTICO']);
+    expect((fixture.nativeElement.querySelector('.cancel-action') as HTMLElement).hidden).toBe(
+      false,
+    );
   });
 });

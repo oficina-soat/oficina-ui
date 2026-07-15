@@ -82,7 +82,10 @@ export type OrdemServico = OrdemServicoCreateRequest & {
     estado: EstadoOrdemServico;
     criadoEm: string;
     atualizadoEm: string;
+    acoesPermitidas: Array<AcaoPermitidaOrdemServico>;
 };
+
+export type AcaoPermitidaOrdemServico = 'INICIAR_DIAGNOSTICO' | 'CONCLUIR_DIAGNOSTICO' | 'RETOMAR_DIAGNOSTICO' | 'INICIAR_EXECUCAO' | 'FINALIZAR' | 'ENTREGAR' | 'CANCELAR';
 
 export type EstadoOrdemServico = 'RECEBIDA' | 'EM_DIAGNOSTICO' | 'AGUARDANDO_APROVACAO' | 'EM_EXECUCAO' | 'FINALIZADA' | 'ENTREGUE';
 

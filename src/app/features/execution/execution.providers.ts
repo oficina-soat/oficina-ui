@@ -1,6 +1,7 @@
 import { inject, InjectionToken } from '@angular/core';
 
 import {
+  CancelExecution,
   CompleteDiagnosis,
   CompleteRepair,
   GetExecution,
@@ -33,4 +34,8 @@ export const START_REPAIR = new InjectionToken<StartRepair>('START_REPAIR', {
 export const COMPLETE_REPAIR = new InjectionToken<CompleteRepair>('COMPLETE_REPAIR', {
   providedIn: 'root',
   factory: () => new CompleteRepair(inject(ExecutionApiAdapter)),
+});
+export const CANCEL_EXECUTION = new InjectionToken<CancelExecution>('CANCEL_EXECUTION', {
+  providedIn: 'root',
+  factory: () => new CancelExecution(inject(ExecutionApiAdapter)),
 });

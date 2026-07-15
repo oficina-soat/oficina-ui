@@ -64,8 +64,13 @@ describe('ExecutionApiAdapter', () => {
       prioridade: 10,
       criadoEm: '2026-07-15T12:00:00Z',
       atualizadoEm: '2026-07-15T12:00:00Z',
+      acoesPermitidas: ['INICIAR_DIAGNOSTICO', 'CANCELAR'],
     });
-    await expect(getResult).resolves.toMatchObject({ id: 'execucao-1', status: 'CRIADA' });
+    await expect(getResult).resolves.toMatchObject({
+      id: 'execucao-1',
+      status: 'CRIADA',
+      allowedActions: ['INICIAR_DIAGNOSTICO', 'CANCELAR'],
+    });
 
     const commandResult = adapter.concluirDiagnostico({
       id: 'execucao/1',
@@ -86,10 +91,36 @@ describe('ExecutionApiAdapter', () => {
       diagnostico: 'Correia danificada',
       criadoEm: '2026-07-15T12:00:00Z',
       atualizadoEm: '2026-07-15T13:00:00Z',
+      acoesPermitidas: ['INICIAR_REPARO', 'CANCELAR'],
     });
     await expect(commandResult).resolves.toMatchObject({
       status: 'DIAGNOSTICO_CONCLUIDO',
       diagnostico: 'Correia danificada',
+      allowedActions: ['INICIAR_REPARO', 'CANCELAR'],
+    });
+
+    const cancelResult = adapter.cancelar({
+      id: 'execucao/1',
+      idempotencyKey: 'cancel-key-123',
+      notes: 'Cliente desistiu',
+    });
+    const cancelRequest = httpTesting.expectOne(
+      'https://api.example/api/v1/execucoes/execucao%2F1/cancelamento',
+    );
+    expect(cancelRequest.request.headers.get('X-Idempotency-Key')).toBe('cancel-key-123');
+    expect(cancelRequest.request.body).toEqual({ motivo: 'Cliente desistiu' });
+    cancelRequest.flush({
+      execucaoId: 'execucao-1',
+      ordemServicoId: 'os-1',
+      status: 'CANCELADA',
+      prioridade: 10,
+      criadoEm: '2026-07-15T12:00:00Z',
+      atualizadoEm: '2026-07-15T14:00:00Z',
+      acoesPermitidas: [],
+    });
+    await expect(cancelResult).resolves.toMatchObject({
+      status: 'CANCELADA',
+      allowedActions: [],
     });
   });
 });

@@ -94,7 +94,16 @@ export interface WorkOrderSummary {
   readonly state: WorkOrderState;
   readonly createdAt: string;
   readonly updatedAt: string;
+  readonly allowedActions: readonly WorkOrderAction[];
 }
+export type WorkOrderAction =
+  | 'INICIAR_DIAGNOSTICO'
+  | 'CONCLUIR_DIAGNOSTICO'
+  | 'RETOMAR_DIAGNOSTICO'
+  | 'INICIAR_EXECUCAO'
+  | 'FINALIZAR'
+  | 'ENTREGAR'
+  | 'CANCELAR';
 
 export interface WorkOrderHistoryEntry {
   readonly state: WorkOrderState;

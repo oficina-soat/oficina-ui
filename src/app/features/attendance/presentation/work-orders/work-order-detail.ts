@@ -117,7 +117,9 @@ const commandMessages = {
               <select id="next-state" formControlName="state">
                 <option value="">Selecione</option>
                 @for (state of states; track state[0]) {
-                  <option [value]="state[0]">{{ state[1] }}</option>
+                  @if (stateAllowed(state[0])) {
+                    <option [value]="state[0]">{{ state[1] }}</option>
+                  }
                 }
               </select>
             </app-form-field>
@@ -129,7 +131,7 @@ const commandMessages = {
             </button>
           </form>
 
-          <div class="cancel-action">
+          <div class="cancel-action" [hidden]="!item.allowedActions.includes('CANCELAR')">
             <app-form-field inputId="cancel-reason" label="Motivo do cancelamento">
               <input id="cancel-reason" [formControl]="cancelReason" />
             </app-form-field>
@@ -318,5 +320,18 @@ export class WorkOrderDetail implements OnInit {
 
   protected stateLabel(state: WorkOrderState): string {
     return workOrderStateLabels[state];
+  }
+
+  protected stateAllowed(state: WorkOrderState): boolean {
+    const actions = this.order()?.allowedActions ?? [];
+    const required = {
+      EM_DIAGNOSTICO: ['INICIAR_DIAGNOSTICO', 'RETOMAR_DIAGNOSTICO'],
+      AGUARDANDO_APROVACAO: ['CONCLUIR_DIAGNOSTICO'],
+      EM_EXECUCAO: ['INICIAR_EXECUCAO'],
+      FINALIZADA: ['FINALIZAR'],
+      ENTREGUE: ['ENTREGAR'],
+      RECEBIDA: [],
+    } as const;
+    return required[state].some((action) => actions.includes(action));
   }
 }

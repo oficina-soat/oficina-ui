@@ -62,6 +62,7 @@ const mapWorkOrder = (order: OrdemServico): WorkOrderSummary => ({
   state: order.estado,
   createdAt: order.criadoEm,
   updatedAt: order.atualizadoEm,
+  allowedActions: order.acoesPermitidas,
 });
 
 const mapHistory = (entry: HistoricoOrdemServico): WorkOrderHistoryEntry => ({

@@ -3,6 +3,7 @@ import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/route
 import { describe, expect, it, vi } from 'vitest';
 
 import {
+  CANCEL_EXECUTION,
   COMPLETE_DIAGNOSIS,
   COMPLETE_REPAIR,
   GET_EXECUTION,
@@ -18,13 +19,18 @@ const execution = {
   prioridade: 10,
   criadoEm: '2026-07-15T12:00:00Z',
   atualizadoEm: '2026-07-15T12:00:00Z',
+  allowedActions: ['INICIAR_DIAGNOSTICO', 'CANCELAR'] as const,
 };
 
 describe('ExecutionDetail', () => {
   it('consulta a execução e delega o início do diagnóstico à API', async () => {
     const get = { execute: vi.fn().mockResolvedValue(execution) };
     const start = {
-      execute: vi.fn().mockResolvedValue({ ...execution, status: 'EM_DIAGNOSTICO' }),
+      execute: vi.fn().mockResolvedValue({
+        ...execution,
+        status: 'EM_DIAGNOSTICO',
+        allowedActions: ['CONCLUIR_DIAGNOSTICO', 'CANCELAR'],
+      }),
     };
     await TestBed.configureTestingModule({
       imports: [ExecutionDetail],
@@ -39,6 +45,7 @@ describe('ExecutionDetail', () => {
         { provide: COMPLETE_DIAGNOSIS, useValue: { execute: vi.fn() } },
         { provide: START_REPAIR, useValue: { execute: vi.fn() } },
         { provide: COMPLETE_REPAIR, useValue: { execute: vi.fn() } },
+        { provide: CANCEL_EXECUTION, useValue: { execute: vi.fn() } },
       ],
     }).compileComponents();
     const fixture = TestBed.createComponent(ExecutionDetail);
@@ -59,5 +66,10 @@ describe('ExecutionDetail', () => {
     );
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('Em diagnóstico');
+    expect(button.hidden).toBe(true);
+    const completeButton = [...fixture.nativeElement.querySelectorAll('button')].find(
+      (item: HTMLButtonElement) => item.textContent?.includes('Concluir diagnóstico'),
+    ) as HTMLButtonElement;
+    expect(completeButton.hidden).toBe(false);
   });
 });
