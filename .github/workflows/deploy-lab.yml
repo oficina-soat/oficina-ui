@@ -1,0 +1,156 @@
+name: Deploy UI Lab
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: oficina-ui-lab
+  cancel-in-progress: false
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+  AWS_REGION: ${{ vars.AWS_REGION || 'us-east-1' }}
+  AWS_DEFAULT_REGION: ${{ vars.AWS_REGION || 'us-east-1' }}
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
+  TF_STATE_BUCKET: ${{ vars.TF_STATE_BUCKET }}
+  TF_STATE_REGION: ${{ vars.TF_STATE_REGION || vars.AWS_REGION || 'us-east-1' }}
+  TF_STATE_DYNAMODB_TABLE: ${{ vars.TF_STATE_DYNAMODB_TABLE }}
+  UI_API_BASE_URL: ${{ vars.UI_API_BASE_URL }}
+  UI_AUTH_BASE_URL: ${{ vars.UI_AUTH_BASE_URL }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout UI
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate and build
+        run: npm run validate
+
+      - name: Checkout optional infrastructure
+        uses: actions/checkout@v6
+        with:
+          repository: oficina-soat/oficina-infra
+          ref: main
+          path: infrastructure
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_wrapper: false
+
+      - name: Read isolated hosting outputs
+        id: hosting
+        working-directory: infrastructure/terraform/optional/ui-hosting/lab
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${TF_STATE_BUCKET}" || {
+            echo "Configure TF_STATE_BUCKET nas variables do repositório." >&2
+            exit 1
+          }
+          args=(
+            "-backend-config=bucket=${TF_STATE_BUCKET}"
+            "-backend-config=key=oficina/lab/optional/ui-hosting/terraform.tfstate"
+            "-backend-config=region=${TF_STATE_REGION}"
+          )
+          if [[ -n "${TF_STATE_DYNAMODB_TABLE:-}" ]]; then
+            args+=("-backend-config=dynamodb_table=${TF_STATE_DYNAMODB_TABLE}")
+          fi
+          terraform init -input=false "${args[@]}"
+          {
+            echo "bucket=$(terraform output -raw bucket_name)"
+            echo "distribution=$(terraform output -raw cloudfront_distribution_id)"
+            echo "url=$(terraform output -raw ui_url)"
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: Validate runtime endpoints
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "${UI_API_BASE_URL}" =~ ^https://[^/]+/.+ ]] || {
+            echo "UI_API_BASE_URL deve ser uma URL HTTPS completa, incluindo /api/v1." >&2
+            exit 1
+          }
+          [[ "${UI_AUTH_BASE_URL}" =~ ^https://[^/]+/?$ ]] || {
+            echo "UI_AUTH_BASE_URL deve conter somente o origin HTTPS da API de autenticação." >&2
+            exit 1
+          }
+
+      - name: Create runtime and deployment metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist/oficina-ui/browser/config
+          jq -n \
+            --arg apiBaseUrl "${UI_API_BASE_URL%/}" \
+            --arg authBaseUrl "${UI_AUTH_BASE_URL%/}" \
+            '{apiBaseUrl: $apiBaseUrl, authBaseUrl: $authBaseUrl}' \
+            > dist/oficina-ui/browser/config/runtime-config.json
+          jq -n \
+            --arg repository "${GITHUB_REPOSITORY}" \
+            --arg revision "${GITHUB_SHA}" \
+            --arg runId "${GITHUB_RUN_ID}" \
+            --arg deployedAt "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            '{repository: $repository, revision: $revision, runId: $runId, deployedAt: $deployedAt}' \
+            > dist/oficina-ui/browser/deploy-metadata.json
+
+      - name: Upload immutable artifacts
+        shell: bash
+        run: |
+          aws s3 sync dist/oficina-ui/browser "s3://${{ steps.hosting.outputs.bucket }}" \
+            --delete \
+            --exclude index.html \
+            --exclude config/runtime-config.json \
+            --exclude deploy-metadata.json \
+            --cache-control "public,max-age=31536000,immutable"
+
+      - name: Upload entrypoint and runtime files without cache
+        shell: bash
+        run: |
+          bucket="s3://${{ steps.hosting.outputs.bucket }}"
+          aws s3 cp dist/oficina-ui/browser/index.html "${bucket}/index.html" \
+            --content-type "text/html; charset=utf-8" \
+            --cache-control "no-cache,no-store,must-revalidate"
+          aws s3 cp dist/oficina-ui/browser/config/runtime-config.json \
+            "${bucket}/config/runtime-config.json" \
+            --content-type "application/json" \
+            --cache-control "no-cache,no-store,must-revalidate"
+          aws s3 cp dist/oficina-ui/browser/deploy-metadata.json \
+            "${bucket}/deploy-metadata.json" \
+            --content-type "application/json" \
+            --cache-control "no-cache,no-store,must-revalidate"
+
+      - name: Invalidate mutable CloudFront paths
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id "${{ steps.hosting.outputs.distribution }}" \
+            --paths "/" "/index.html" "/config/*" "/deploy-metadata.json"
+
+      - name: Publish deployment summary
+        shell: bash
+        run: |
+          {
+            echo "### Oficina UI Lab"
+            echo
+            echo "- URL: ${{ steps.hosting.outputs.url }}"
+            echo "- Revision: \`${GITHUB_SHA}\`"
+            echo "- Run: \`${GITHUB_RUN_ID}\`"
+          } >> "${GITHUB_STEP_SUMMARY}"

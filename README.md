@@ -36,6 +36,8 @@ npm run api:generate
 
 O acesso às APIs usa o pipeline transversal documentado em [Arquitetura e guardrails](docs/architecture.md): sessão limitada à aba, correlação, erros canônicos e idempotência explícita para comandos.
 
+O acesso publicado no `lab` usa uma stack opcional e isolada de S3 e CloudFront. O processo, as variáveis necessárias e a política de cache estão em [Deploy no lab](docs/deployment.md).
+
 ## Princípio arquitetural
 
 O frontend não contém regras de negócio. Ele coordena a experiência, chama as APIs e apresenta o resultado canônico. Autorização, cálculos, transições, estoque, Saga e pagamentos permanecem nos backends.
@@ -56,5 +58,7 @@ flowchart LR
 - [Escopo do MVP](docs/product-scope.md)
 - [Prontidão das APIs](docs/api-readiness.md)
 - [Wireframes](docs/wireframes.md)
+- [Acessibilidade](docs/accessibility.md)
+- [Deploy no lab](docs/deployment.md)
 - [Como contribuir](CONTRIBUTING.md)
 - [Roadmap normativo](https://github.com/oficina-soat/oficina-platform/blob/main/docs/frontend/roadmap.md)
