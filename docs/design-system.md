@@ -35,4 +35,4 @@ Botões preservam o elemento nativo `button` e usam as classes `ui-button--prima
 - Layouts devem continuar utilizáveis a 320 px, com zoom de 200% e somente teclado.
 - Animações respeitam `prefers-reduced-motion`.
 
-A página inicial funciona temporariamente como referência visual executável. Ela será substituída pelo shell real durante `UI-AUTH-001` e `UI-SHELL-001`, sem remover os componentes compartilhados.
+Os componentes compartilhados são exercitados por testes unitários. A página inicial passou a ser o login operacional em `UI-AUTH-001`; exemplos visuais não devem competir com rotas reais da aplicação.

@@ -1,0 +1,25 @@
+.session-page {
+  display: grid;
+  min-height: 100dvh;
+  place-items: center;
+  padding: var(--space-4);
+}
+
+.session-card {
+  width: min(36rem, 100%);
+  padding: var(--space-8);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+
+  .ui-button {
+    display: inline-block;
+    text-decoration: none;
+  }
+}
+
+.eyebrow {
+  color: var(--color-brand-600);
+  font-weight: 800;
+  text-transform: uppercase;
+}

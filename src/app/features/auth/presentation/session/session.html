@@ -1,0 +1,19 @@
+<main class="session-page" aria-labelledby="session-title">
+  <section class="session-card">
+    <p class="eyebrow">Oficina SOAT</p>
+    <h1 id="session-title">Sessão operacional</h1>
+    @if (session.session(); as activeSession) {
+      <app-alert title="Autenticação concluída" tone="success">
+        <p>A sessão está somente na memória deste navegador.</p>
+      </app-alert>
+      <p>Expira em {{ activeSession.expiresAt | date: 'dd/MM/yyyy HH:mm:ss' }}.</p>
+      <p>Os fluxos operacionais serão adicionados nos próximos incrementos.</p>
+      <button class="ui-button ui-button--secondary" type="button" (click)="logout()">Sair</button>
+    } @else {
+      <app-alert title="Sessão expirada" tone="warning">
+        <p>Entre novamente para continuar.</p>
+      </app-alert>
+      <a class="ui-button ui-button--primary" routerLink="/login">Voltar ao login</a>
+    }
+  </section>
+</main>

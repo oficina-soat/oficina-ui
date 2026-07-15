@@ -11,6 +11,7 @@ export class ApiError extends Error {
     message: string,
     readonly correlationId: string | null,
     readonly details: readonly ApiErrorDetail[] = [],
+    readonly reason?: string,
   ) {
     super(message);
   }
@@ -47,6 +48,7 @@ export const toApiError = (
       stringValue(record, 'message') ?? 'Não foi possível concluir a operação.',
       stringValue(record, 'correlationId') ?? headerCorrelationId,
       parseDetails(record['details']),
+      stringValue(record, 'motivo'),
     );
   }
   return new ApiError(

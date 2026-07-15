@@ -38,7 +38,7 @@ describe('interceptors HTTP', () => {
   });
 
   it('propaga sessão em memória e gera correlação sem idempotência em leitura', () => {
-    session.setAccessToken('jwt-operacional');
+    session.start('jwt-operacional', 3600);
     http.get('/api/v1/clientes').subscribe();
 
     const request = httpTesting.expectOne('/api/v1/clientes');
@@ -49,7 +49,7 @@ describe('interceptors HTTP', () => {
   });
 
   it('preserva a chave criada para o comando mutável e permite requisição pública', () => {
-    session.setAccessToken('jwt-operacional');
+    session.start('jwt-operacional', 3600);
     const context = idempotentCommandContext('command-key-123');
     http.post('/api/v1/clientes', {}, { context }).subscribe();
     const command = httpTesting.expectOne('/api/v1/clientes');

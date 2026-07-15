@@ -47,6 +47,8 @@ Validar preflight, headers `Authorization`, `Content-Type`, `X-Correlation-Id` e
 
 O contrato retorna JWT, mas o MVP precisa confirmar `expiresIn`/claims necessárias para expiração e navegação por papel. A UI não usará claims para autorização definitiva.
 
+O erro atual de autenticação usa o mesmo `motivo` (`Usuário inativo`) para usuário `INATIVO`, `BLOQUEADO` ou sem senha ativada. A UI apresenta orientação única de conta indisponível. Se o produto exigir mensagens distintas, o contrato deve fornecer códigos estáveis sem facilitar enumeração de usuários.
+
 ## Decisão de início
 
 Não há bloqueio para criar o scaffold, autenticação, cadastro vinculado, fila e comandos de execução. Busca operacional avançada e CORS devem ser resolvidos antes da homologação das telas afetadas.

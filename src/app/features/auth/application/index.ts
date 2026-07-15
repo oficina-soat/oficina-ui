@@ -1,3 +1,12 @@
 // Coordenação dos fluxos de autenticação da interface.
 export {};
-export type { AuthGateway, AuthSession, EmitirTokenCommand } from './auth-gateway';
+export {
+  AuthenticateUser,
+  AuthenticationError,
+  LogoutUser,
+  type AuthenticationFailureReason,
+  type AuthGateway,
+  type AuthSession,
+  type AuthSessionPort,
+  type EmitirTokenCommand,
+} from './auth-gateway';
