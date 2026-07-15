@@ -1,20 +1,31 @@
-import type { RuntimeConfig } from '../../../core/config/runtime-config';
-import { requestJson } from '../../../core/http/http-client';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { inject, Injectable } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
+
+import { RUNTIME_CONFIG } from '../../../core/config/runtime-config';
+import { publicRequestContext } from '../../../core/http/request-context';
 import type { AuthGateway, AuthSession, EmitirTokenCommand } from '../application';
 import type { TokenResponse } from './generated/types.gen';
 
+@Injectable({ providedIn: 'root' })
 export class AuthApiAdapter implements AuthGateway {
-  constructor(private readonly config: RuntimeConfig) {}
+  private readonly http = inject(HttpClient);
+  private readonly config = inject(RUNTIME_CONFIG);
 
   async emitirToken(command: EmitirTokenCommand): Promise<AuthSession> {
-    const data = await requestJson<TokenResponse>(`${this.config.authBaseUrl}/auth/token`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(command.correlationId ? { 'X-Correlation-Id': command.correlationId } : {}),
-      },
-      body: JSON.stringify({ cpf: command.cpf, password: command.password }),
-    });
+    const headers = command.correlationId
+      ? new HttpHeaders({ 'X-Correlation-Id': command.correlationId })
+      : undefined;
+    const data = await firstValueFrom(
+      this.http.post<TokenResponse>(
+        `${this.config.authBaseUrl}/auth/token`,
+        { cpf: command.cpf, password: command.password },
+        {
+          context: publicRequestContext(),
+          ...(headers ? { headers } : {}),
+        },
+      ),
+    );
 
     return {
       accessToken: data.access_token,

@@ -30,7 +30,8 @@ for (const file of (await walk(root)).filter((path) => extname(path) === '.ts'))
   if (
     source.includes('HttpClient') &&
     !path.includes('/infrastructure/') &&
-    !path.startsWith('core/http/')
+    !path.startsWith('core/http/') &&
+    path !== 'app.config.ts'
   ) {
     violations.push(`${path}: HttpClient só pode existir em infrastructure ou core/http.`);
   }

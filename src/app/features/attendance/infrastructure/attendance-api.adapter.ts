@@ -1,5 +1,8 @@
-import type { RuntimeConfig } from '../../../core/config/runtime-config';
-import { requestJson } from '../../../core/http/http-client';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
+import { inject, Injectable } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
+
+import { RUNTIME_CONFIG } from '../../../core/config/runtime-config';
 import type {
   AttendanceGateway,
   ClienteResumo,
@@ -16,19 +19,24 @@ const mapCliente = (cliente: Cliente): ClienteResumo => ({
   ...(cliente.email === undefined ? {} : { email: cliente.email }),
 });
 
+@Injectable({ providedIn: 'root' })
 export class AttendanceApiAdapter implements AttendanceGateway {
-  constructor(private readonly config: RuntimeConfig) {}
+  private readonly http = inject(HttpClient);
+  private readonly config = inject(RUNTIME_CONFIG);
 
   async consultarClientes(query: ConsultarClientesQuery = {}): Promise<Pagina<ClienteResumo>> {
-    const url = new URL(`${this.config.apiBaseUrl}/clientes`);
-    if (query.page !== undefined) url.searchParams.set('page', String(query.page));
-    if (query.size !== undefined) url.searchParams.set('size', String(query.size));
-
-    const data = await requestJson<ConsultarClientesResponse>(url.toString(), {
-      headers: {
-        ...(query.correlationId ? { 'X-Correlation-Id': query.correlationId } : {}),
-      },
-    });
+    let params = new HttpParams();
+    if (query.page !== undefined) params = params.set('page', query.page);
+    if (query.size !== undefined) params = params.set('size', query.size);
+    const headers = query.correlationId
+      ? new HttpHeaders({ 'X-Correlation-Id': query.correlationId })
+      : undefined;
+    const data = await firstValueFrom(
+      this.http.get<ConsultarClientesResponse>(`${this.config.apiBaseUrl}/clientes`, {
+        params,
+        ...(headers ? { headers } : {}),
+      }),
+    );
 
     return {
       items: (data.items ?? []).map(mapCliente),

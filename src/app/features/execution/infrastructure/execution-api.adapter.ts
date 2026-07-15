@@ -1,5 +1,8 @@
-import type { RuntimeConfig } from '../../../core/config/runtime-config';
-import { requestJson } from '../../../core/http/http-client';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
+import { inject, Injectable } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
+
+import { RUNTIME_CONFIG } from '../../../core/config/runtime-config';
 import type { ConsultarFilaQuery, ExecutionGateway, FilaExecucao } from '../application';
 import type { ConsultarFilaExecucaoResponse, FilaExecucaoItem } from './generated/types.gen';
 
@@ -12,18 +15,22 @@ const mapFila = (item: FilaExecucaoItem): FilaExecucao => ({
   criadoEm: item.criadoEm,
 });
 
+@Injectable({ providedIn: 'root' })
 export class ExecutionApiAdapter implements ExecutionGateway {
-  constructor(private readonly config: RuntimeConfig) {}
+  private readonly http = inject(HttpClient);
+  private readonly config = inject(RUNTIME_CONFIG);
 
   async consultarFila(query: ConsultarFilaQuery = {}): Promise<readonly FilaExecucao[]> {
-    const url = new URL(`${this.config.apiBaseUrl}/execucoes/fila`);
-    if (query.status) url.searchParams.set('status', query.status);
-
-    const data = await requestJson<ConsultarFilaExecucaoResponse>(url.toString(), {
-      headers: {
-        ...(query.correlationId ? { 'X-Correlation-Id': query.correlationId } : {}),
-      },
-    });
+    const params = query.status ? new HttpParams().set('status', query.status) : undefined;
+    const headers = query.correlationId
+      ? new HttpHeaders({ 'X-Correlation-Id': query.correlationId })
+      : undefined;
+    const data = await firstValueFrom(
+      this.http.get<ConsultarFilaExecucaoResponse>(`${this.config.apiBaseUrl}/execucoes/fila`, {
+        ...(params ? { params } : {}),
+        ...(headers ? { headers } : {}),
+      }),
+    );
     return data.map(mapFila);
   }
 }

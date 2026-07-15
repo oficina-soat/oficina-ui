@@ -32,6 +32,8 @@ npm run api:sync
 npm run api:generate
 ```
 
+O acesso às APIs usa o pipeline transversal documentado em [Arquitetura e guardrails](docs/architecture.md): sessão em memória, correlação, erros canônicos e idempotência explícita para comandos.
+
 ## Princípio arquitetural
 
 O frontend não contém regras de negócio. Ele coordena a experiência, chama as APIs e apresenta o resultado canônico. Autorização, cálculos, transições, estoque, Saga e pagamentos permanecem nos backends.
