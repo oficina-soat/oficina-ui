@@ -3,9 +3,20 @@ export {};
 export type {
   AttendanceGateway,
   ClientFailureReason,
+  ClientVehicles,
   ClienteResumo,
   ConsultarClientesQuery,
   CriarClienteCommand,
+  CriarVeiculoCommand,
   Pagina,
+  VehicleFailureReason,
+  VeiculoResumo,
 } from './attendance-gateway';
-export { ClientOperationError, CreateClient, ListClients } from './attendance-gateway';
+export {
+  ClientOperationError,
+  CreateClient,
+  CreateVehicle,
+  ListClients,
+  LoadClientVehicles,
+  VehicleOperationError,
+} from './attendance-gateway';

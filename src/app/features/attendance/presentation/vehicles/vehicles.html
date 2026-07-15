@@ -1,0 +1,185 @@
+<section class="vehicles-page" aria-labelledby="vehicles-title">
+  <a routerLink="/clientes">← Voltar para clientes</a>
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">Atendimento</p>
+      <h1 id="vehicles-title">Veículos</h1>
+      @if (data(); as result) {
+        <p>
+          Cliente: <strong>{{ result.client.nome }}</strong>
+        </p>
+      } @else {
+        <p>Consulte e cadastre os veículos vinculados ao cliente.</p>
+      }
+    </div>
+    <button
+      class="ui-button ui-button--primary"
+      type="button"
+      [disabled]="!data()"
+      (click)="openForm()"
+    >
+      Novo veículo
+    </button>
+  </header>
+
+  @if (success()) {
+    <app-alert title="Cadastro concluído" tone="success"
+      ><p>{{ success() }}</p></app-alert
+    >
+  }
+  @if (failure()) {
+    <app-alert title="Não foi possível concluir" tone="danger">
+      <p>{{ failure() }}</p>
+      @for (detail of failureDetails(); track detail) {
+        <p>{{ detail }}</p>
+      }
+      @if (correlationId()) {
+        <p>Referência: {{ correlationId() }}</p>
+      }
+    </app-alert>
+  }
+
+  @if (formOpen()) {
+    <section class="vehicle-form" aria-labelledby="vehicle-form-title">
+      <h2 id="vehicle-form-title">Cadastrar veículo</h2>
+      <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+        <app-form-field
+          inputId="vehicle-plate"
+          label="Placa"
+          messageId="vehicle-plate-message"
+          [required]="true"
+          [error]="
+            form.controls.placa.touched && form.controls.placa.invalid
+              ? 'Informe a placa.'
+              : undefined
+          "
+        >
+          <input
+            id="vehicle-plate"
+            formControlName="placa"
+            autocomplete="off"
+            aria-describedby="vehicle-plate-message"
+          />
+        </app-form-field>
+        <app-form-field
+          inputId="vehicle-brand"
+          label="Marca"
+          messageId="vehicle-brand-message"
+          [required]="true"
+          [error]="
+            form.controls.marca.touched && form.controls.marca.invalid
+              ? 'Informe a marca.'
+              : undefined
+          "
+        >
+          <input
+            id="vehicle-brand"
+            formControlName="marca"
+            autocomplete="off"
+            aria-describedby="vehicle-brand-message"
+          />
+        </app-form-field>
+        <app-form-field
+          inputId="vehicle-model"
+          label="Modelo"
+          messageId="vehicle-model-message"
+          [required]="true"
+          [error]="
+            form.controls.modelo.touched && form.controls.modelo.invalid
+              ? 'Informe o modelo.'
+              : undefined
+          "
+        >
+          <input
+            id="vehicle-model"
+            formControlName="modelo"
+            autocomplete="off"
+            aria-describedby="vehicle-model-message"
+          />
+        </app-form-field>
+        <app-form-field
+          inputId="vehicle-year"
+          label="Ano"
+          hint="Opcional, a partir de 1900."
+          messageId="vehicle-year-message"
+          [error]="
+            form.controls.ano.touched && form.controls.ano.invalid
+              ? 'Informe um ano a partir de 1900.'
+              : undefined
+          "
+        >
+          <input
+            id="vehicle-year"
+            formControlName="ano"
+            type="number"
+            min="1900"
+            inputmode="numeric"
+            aria-describedby="vehicle-year-message"
+          />
+        </app-form-field>
+        <div class="form-actions">
+          <button class="ui-button ui-button--primary" type="submit" [disabled]="saving()">
+            {{ saving() ? 'Salvando…' : 'Salvar veículo' }}
+          </button>
+          <button
+            class="ui-button ui-button--secondary"
+            type="button"
+            [disabled]="saving()"
+            (click)="closeForm()"
+          >
+            Cancelar
+          </button>
+        </div>
+      </form>
+    </section>
+  }
+
+  @if (loading() && !data()) {
+    <app-loading label="Carregando veículos" />
+  } @else if (data(); as result) {
+    @if (loading()) {
+      <app-loading label="Atualizando veículos" />
+    }
+    @if (result.vehicles.length === 0) {
+      <app-empty-state
+        title="Nenhum veículo cadastrado"
+        description="Cadastre o primeiro veículo vinculado a este cliente."
+        actionLabel="Cadastrar veículo"
+        (action)="openForm()"
+      />
+    } @else {
+      <app-data-table label="Veículos do cliente">
+        <table>
+          <caption>
+            {{
+              result.vehicles.length
+            }}
+            veículo(s) vinculado(s)
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Placa</th>
+              <th scope="col">Marca</th>
+              <th scope="col">Modelo</th>
+              <th scope="col">Ano</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (vehicle of result.vehicles; track vehicle.id) {
+              <tr>
+                <td>{{ vehicle.placa }}</td>
+                <td>{{ vehicle.marca }}</td>
+                <td>{{ vehicle.modelo }}</td>
+                <td>{{ vehicle.ano ?? '—' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </app-data-table>
+    }
+  } @else if (failure()) {
+    <button class="ui-button ui-button--secondary" type="button" (click)="load()">
+      Tentar novamente
+    </button>
+  }
+</section>

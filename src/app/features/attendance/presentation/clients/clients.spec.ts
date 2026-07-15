@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { describe, expect, it, vi } from 'vitest';
 
 import { CREATE_CLIENT, LIST_CLIENTS } from '../../attendance.providers';
@@ -18,6 +19,7 @@ describe('Clients', () => {
     await TestBed.configureTestingModule({
       imports: [Clients],
       providers: [
+        provideRouter([]),
         { provide: LIST_CLIENTS, useValue: listClients },
         { provide: CREATE_CLIENT, useValue: { execute: vi.fn() } },
       ],
@@ -53,6 +55,7 @@ describe('Clients', () => {
     await TestBed.configureTestingModule({
       imports: [Clients],
       providers: [
+        provideRouter([]),
         { provide: LIST_CLIENTS, useValue: listClients },
         { provide: CREATE_CLIENT, useValue: createClient },
       ],

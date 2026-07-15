@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, signal, type OnInit } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 
 import {
   Alert,
@@ -27,7 +28,16 @@ const errorMessages: Readonly<Record<ClientFailureReason, string>> = {
 
 @Component({
   selector: 'app-clients',
-  imports: [Alert, DataTable, EmptyState, FormField, Loading, Pagination, ReactiveFormsModule],
+  imports: [
+    Alert,
+    DataTable,
+    EmptyState,
+    FormField,
+    Loading,
+    Pagination,
+    ReactiveFormsModule,
+    RouterLink,
+  ],
   templateUrl: './clients.html',
   styleUrl: './clients.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

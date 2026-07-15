@@ -6,6 +6,15 @@ export interface ClienteResumo {
   readonly email?: string;
 }
 
+export interface VeiculoResumo {
+  readonly id: string;
+  readonly clienteId: string;
+  readonly placa: string;
+  readonly marca: string;
+  readonly modelo: string;
+  readonly ano?: number;
+}
+
 export interface Pagina<T> {
   readonly items: readonly T[];
   readonly page: number;
@@ -42,9 +51,39 @@ export class ClientOperationError extends Error {
   }
 }
 
+export interface CriarVeiculoCommand {
+  readonly clienteId: string;
+  readonly placa: string;
+  readonly marca: string;
+  readonly modelo: string;
+  readonly ano?: number;
+  readonly idempotencyKey: string;
+}
+
+export type VehicleFailureReason =
+  | 'INVALID_INPUT'
+  | 'DUPLICATE'
+  | 'NOT_FOUND'
+  | 'UNAUTHENTICATED'
+  | 'SERVICE_UNAVAILABLE'
+  | 'UNKNOWN';
+
+export class VehicleOperationError extends Error {
+  constructor(
+    readonly reason: VehicleFailureReason,
+    readonly correlationId: string | null,
+    readonly details: readonly string[] = [],
+  ) {
+    super(reason);
+  }
+}
+
 export interface AttendanceGateway {
   consultarClientes(query?: ConsultarClientesQuery): Promise<Pagina<ClienteResumo>>;
   criarCliente(command: CriarClienteCommand): Promise<ClienteResumo>;
+  consultarCliente(clienteId: string): Promise<ClienteResumo>;
+  consultarVeiculos(clienteId: string): Promise<readonly VeiculoResumo[]>;
+  criarVeiculo(command: CriarVeiculoCommand): Promise<VeiculoResumo>;
 }
 
 export class ListClients {
@@ -60,5 +99,30 @@ export class CreateClient {
 
   execute(command: CriarClienteCommand): Promise<ClienteResumo> {
     return this.gateway.criarCliente(command);
+  }
+}
+
+export interface ClientVehicles {
+  readonly client: ClienteResumo;
+  readonly vehicles: readonly VeiculoResumo[];
+}
+
+export class LoadClientVehicles {
+  constructor(private readonly gateway: AttendanceGateway) {}
+
+  async execute(clienteId: string): Promise<ClientVehicles> {
+    const [client, vehicles] = await Promise.all([
+      this.gateway.consultarCliente(clienteId),
+      this.gateway.consultarVeiculos(clienteId),
+    ]);
+    return { client, vehicles };
+  }
+}
+
+export class CreateVehicle {
+  constructor(private readonly gateway: AttendanceGateway) {}
+
+  execute(command: CriarVeiculoCommand): Promise<VeiculoResumo> {
+    return this.gateway.criarVeiculo(command);
   }
 }

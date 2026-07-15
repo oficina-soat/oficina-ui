@@ -1,2 +1,12 @@
-export { CREATE_CLIENT, LIST_CLIENTS } from './attendance.providers';
-export { ClientOperationError, type ClientFailureReason } from './application';
+export {
+  CREATE_CLIENT,
+  CREATE_VEHICLE,
+  LIST_CLIENTS,
+  LOAD_CLIENT_VEHICLES,
+} from './attendance.providers';
+export {
+  ClientOperationError,
+  VehicleOperationError,
+  type ClientFailureReason,
+  type VehicleFailureReason,
+} from './application';

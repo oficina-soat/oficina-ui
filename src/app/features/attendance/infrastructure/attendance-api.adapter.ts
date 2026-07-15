@@ -12,9 +12,13 @@ import {
   type ClienteResumo,
   type ConsultarClientesQuery,
   type CriarClienteCommand,
+  type CriarVeiculoCommand,
   type Pagina,
+  VehicleOperationError,
+  type VehicleFailureReason,
+  type VeiculoResumo,
 } from '../application';
-import type { Cliente, ConsultarClientesResponse } from './generated/types.gen';
+import type { Cliente, ConsultarClientesResponse, Veiculo } from './generated/types.gen';
 
 const mapCliente = (cliente: Cliente): ClienteResumo => ({
   id: cliente.clienteId,
@@ -22,6 +26,15 @@ const mapCliente = (cliente: Cliente): ClienteResumo => ({
   documento: cliente.documento,
   ...(cliente.telefone === undefined ? {} : { telefone: cliente.telefone }),
   ...(cliente.email === undefined ? {} : { email: cliente.email }),
+});
+
+const mapVeiculo = (vehicle: Veiculo): VeiculoResumo => ({
+  id: vehicle.veiculoId,
+  clienteId: vehicle.clienteId,
+  placa: vehicle.placa,
+  marca: vehicle.marca,
+  modelo: vehicle.modelo,
+  ...(vehicle.ano === undefined ? {} : { ano: vehicle.ano }),
 });
 
 @Injectable({ providedIn: 'root' })
@@ -83,6 +96,52 @@ export class AttendanceApiAdapter implements AttendanceGateway {
     }
   }
 
+  async consultarCliente(clienteId: string): Promise<ClienteResumo> {
+    try {
+      const data = await firstValueFrom(
+        this.http.get<Cliente>(
+          `${this.config.apiBaseUrl}/clientes/${encodeURIComponent(clienteId)}`,
+        ),
+      );
+      return mapCliente(data);
+    } catch (error: unknown) {
+      throw this.vehicleError(error);
+    }
+  }
+
+  async consultarVeiculos(clienteId: string): Promise<readonly VeiculoResumo[]> {
+    try {
+      const data = await firstValueFrom(
+        this.http.get<Veiculo[]>(
+          `${this.config.apiBaseUrl}/clientes/${encodeURIComponent(clienteId)}/veiculos`,
+        ),
+      );
+      return data.map(mapVeiculo);
+    } catch (error: unknown) {
+      throw this.vehicleError(error);
+    }
+  }
+
+  async criarVeiculo(command: CriarVeiculoCommand): Promise<VeiculoResumo> {
+    try {
+      const data = await firstValueFrom(
+        this.http.post<Veiculo>(
+          `${this.config.apiBaseUrl}/clientes/${encodeURIComponent(command.clienteId)}/veiculos`,
+          {
+            placa: command.placa,
+            marca: command.marca,
+            modelo: command.modelo,
+            ...(command.ano === undefined ? {} : { ano: command.ano }),
+          },
+          { context: idempotentCommandContext(command.idempotencyKey) },
+        ),
+      );
+      return mapVeiculo(data);
+    } catch (error: unknown) {
+      throw this.vehicleError(error);
+    }
+  }
+
   private clientError(error: unknown): ClientOperationError {
     if (!(error instanceof ApiError)) return new ClientOperationError('SERVICE_UNAVAILABLE', null);
     const reasons: Readonly<Record<number, ClientFailureReason>> = {
@@ -91,6 +150,25 @@ export class AttendanceApiAdapter implements AttendanceGateway {
       409: 'DUPLICATE',
     };
     return new ClientOperationError(
+      error.status === 0 || error.status >= 500
+        ? 'SERVICE_UNAVAILABLE'
+        : (reasons[error.status] ?? 'UNKNOWN'),
+      error.correlationId,
+      error.details.map((detail) => detail.message),
+    );
+  }
+
+  private vehicleError(error: unknown): VehicleOperationError {
+    if (!(error instanceof ApiError)) {
+      return new VehicleOperationError('SERVICE_UNAVAILABLE', null);
+    }
+    const reasons: Readonly<Record<number, VehicleFailureReason>> = {
+      400: 'INVALID_INPUT',
+      401: 'UNAUTHENTICATED',
+      404: 'NOT_FOUND',
+      409: 'DUPLICATE',
+    };
+    return new VehicleOperationError(
       error.status === 0 || error.status >= 500
         ? 'SERVICE_UNAVAILABLE'
         : (reasons[error.status] ?? 'UNKNOWN'),

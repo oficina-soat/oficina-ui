@@ -93,4 +93,63 @@ describe('AttendanceApiAdapter', () => {
 
     await expect(result).rejects.toEqual(new ClientOperationError('DUPLICATE', null));
   });
+
+  it('consulta cliente e veículos vinculados pelas rotas contratuais', async () => {
+    const clientResult = adapter.consultarCliente('cliente/1');
+    httpTesting.expectOne('https://api.example/api/v1/clientes/cliente%2F1').flush({
+      clienteId: 'cliente-1',
+      nome: 'Ana',
+      documento: '12345678901',
+      criadoEm: '2026-07-15T12:00:00Z',
+      atualizadoEm: '2026-07-15T12:00:00Z',
+    });
+    await expect(clientResult).resolves.toMatchObject({ id: 'cliente-1', nome: 'Ana' });
+
+    const vehiclesResult = adapter.consultarVeiculos('cliente/1');
+    httpTesting.expectOne('https://api.example/api/v1/clientes/cliente%2F1/veiculos').flush([
+      {
+        veiculoId: 'veiculo-1',
+        clienteId: 'cliente-1',
+        placa: 'ABC1D23',
+        marca: 'Volkswagen',
+        modelo: 'Gol',
+        ano: 2020,
+        criadoEm: '2026-07-15T12:00:00Z',
+        atualizadoEm: '2026-07-15T12:00:00Z',
+      },
+    ]);
+    await expect(vehiclesResult).resolves.toEqual([
+      {
+        id: 'veiculo-1',
+        clienteId: 'cliente-1',
+        placa: 'ABC1D23',
+        marca: 'Volkswagen',
+        modelo: 'Gol',
+        ano: 2020,
+      },
+    ]);
+  });
+
+  it('cadastra veículo no cliente com idempotência', async () => {
+    const result = adapter.criarVeiculo({
+      clienteId: 'cliente-1',
+      placa: 'ABC1D23',
+      marca: 'Volkswagen',
+      modelo: 'Gol',
+      idempotencyKey: 'vehicle-key-123',
+    });
+    const request = httpTesting.expectOne('https://api.example/api/v1/clientes/cliente-1/veiculos');
+    expect(request.request.headers.get('X-Idempotency-Key')).toBe('vehicle-key-123');
+    expect(request.request.body).toEqual({ placa: 'ABC1D23', marca: 'Volkswagen', modelo: 'Gol' });
+    request.flush({
+      veiculoId: 'veiculo-1',
+      clienteId: 'cliente-1',
+      placa: 'ABC1D23',
+      marca: 'Volkswagen',
+      modelo: 'Gol',
+      criadoEm: '2026-07-15T12:00:00Z',
+      atualizadoEm: '2026-07-15T12:00:00Z',
+    });
+    await expect(result).resolves.toMatchObject({ id: 'veiculo-1', clienteId: 'cliente-1' });
+  });
 });

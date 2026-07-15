@@ -145,6 +145,7 @@
               <th scope="col">CPF</th>
               <th scope="col">Telefone</th>
               <th scope="col">E-mail</th>
+              <th scope="col">Ações</th>
             </tr>
           </thead>
           <tbody>
@@ -154,6 +155,7 @@
                 <td>{{ maskDocument(client.documento) }}</td>
                 <td>{{ client.telefone || '—' }}</td>
                 <td>{{ client.email || '—' }}</td>
+                <td><a [routerLink]="['/clientes', client.id, 'veiculos']">Ver veículos</a></td>
               </tr>
             }
           </tbody>
