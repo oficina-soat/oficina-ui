@@ -14,13 +14,13 @@ flowchart LR
 
 ## Fronteiras
 
-| Camada | Pode conter | Não pode conter |
-|---|---|---|
-| `presentation` | componentes, páginas, formulários, rotas, view state | HTTP direto, DTO externo, regra de negócio |
-| `application` | coordenação, ports, estado efêmero, comandos da UI | cálculo financeiro, transição de estado, autorização definitiva |
-| `infrastructure` | adapters HTTP, DTOs, mappers, sessão, configuração | componentes, decisão de negócio, estado visual |
-| `shared/ui` | elementos visuais reutilizáveis | semântica de Cliente, OS, Billing ou Execution |
-| `core` | autenticação, erro, correlação e configuração transversal | features ou abstrações genéricas sem uso comprovado |
+| Camada           | Pode conter                                               | Não pode conter                                                 |
+| ---------------- | --------------------------------------------------------- | --------------------------------------------------------------- |
+| `presentation`   | componentes, páginas, formulários, rotas, view state      | HTTP direto, DTO externo, regra de negócio                      |
+| `application`    | coordenação, ports, estado efêmero, comandos da UI        | cálculo financeiro, transição de estado, autorização definitiva |
+| `infrastructure` | adapters HTTP, DTOs, mappers, sessão, configuração        | componentes, decisão de negócio, estado visual                  |
+| `shared/ui`      | elementos visuais reutilizáveis                           | semântica de Cliente, OS, Billing ou Execution                  |
+| `core`           | autenticação, erro, correlação e configuração transversal | features ou abstrações genéricas sem uso comprovado             |
 
 ## Exemplos proibidos
 
@@ -34,15 +34,15 @@ const total = itens.reduce((soma, item) => soma + item.valor * item.quantidade, 
 
 A UI deve apresentar ações fornecidas ou aceitas pela API e tratar a eventual rejeição canônica. Ocultar uma ação por papel ou estado recebido é somente melhoria de experiência; nunca é controle de segurança.
 
-## Guardrails automatizados planejados
+## Guardrails automatizados
 
 - ESLint com zero warnings e proibição de `any`/imports restritos;
 - TypeScript estrito;
 - teste de dependências entre camadas e features;
 - busca por `HttpClient` fora de `infrastructure`/`core/http`;
-- testes de adapters e mappers;
+- proibição de armazenamento persistente de credenciais no navegador;
 - orçamento de bundle e build de produção;
-- testes E2E e acessibilidade dos fluxos principais;
-- auditoria de dependências e Quality Gate.
+- testes unitários com cobertura;
+- auditoria das dependências de produção.
 
-Esses controles serão materializados junto ao scaffold Angular em `UI-BOOT-001` e `UI-ARCH-002`.
+O comando `npm run validate` executa o conjunto obrigatório. Testes de adapters, mappers, acessibilidade e E2E devem ser acrescentados junto aos fluxos que exercitam, sem esperar uma etapa posterior de estabilização.
