@@ -1,0 +1,56 @@
+.request-page {
+  display: grid;
+  min-height: 100dvh;
+  place-items: center;
+  padding: var(--space-4);
+}
+
+.request-card {
+  display: grid;
+  gap: var(--space-6);
+  width: min(42rem, 100%);
+  padding: var(--space-8);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+
+  form {
+    display: grid;
+    gap: var(--space-4);
+  }
+}
+
+.token-result {
+  display: grid;
+  gap: var(--space-2);
+
+  output {
+    overflow-wrap: anywhere;
+    padding: var(--space-3);
+    border: 1px solid var(--color-neutral-300);
+    border-radius: var(--radius-sm);
+    font-family: ui-monospace, monospace;
+  }
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+
+  .ui-button {
+    display: inline-block;
+    text-decoration: none;
+  }
+}
+
+.eyebrow {
+  color: var(--color-brand-600);
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.correlation {
+  margin-top: var(--space-2) !important;
+  font-size: 0.75rem;
+}

@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 
 import { Alert, FormField } from '../../../../shared/ui';
 import {
@@ -19,7 +19,7 @@ const errorMessages: Readonly<Record<AuthenticationFailureReason, string>> = {
 
 @Component({
   selector: 'app-login',
-  imports: [Alert, FormField, ReactiveFormsModule],
+  imports: [Alert, FormField, ReactiveFormsModule, RouterLink],
   templateUrl: './login.html',
   styleUrl: './login.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -8,6 +8,9 @@
       </app-alert>
       <p>Expira em {{ activeSession.expiresAt | date: 'dd/MM/yyyy HH:mm:ss' }}.</p>
       <p>Os fluxos operacionais serão adicionados nos próximos incrementos.</p>
+      <a class="ui-button ui-button--primary" routerLink="/administracao/ativacoes/nova"
+        >Gerar token de ativação</a
+      >
       <button class="ui-button ui-button--secondary" type="button" (click)="logout()">Sair</button>
     } @else {
       <app-alert title="Sessão expirada" tone="warning">

@@ -49,6 +49,8 @@ O contrato retorna JWT, mas o MVP precisa confirmar `expiresIn`/claims necessár
 
 O erro atual de autenticação usa o mesmo `motivo` (`Usuário inativo`) para usuário `INATIVO`, `BLOQUEADO` ou sem senha ativada. A UI apresenta orientação única de conta indisponível. Se o produto exigir mensagens distintas, o contrato deve fornecer códigos estáveis sem facilitar enumeração de usuários.
 
+O fluxo de ativação preserva os dois passos do contrato serverless: a geração administrativa usa a sessão em memória e exibe o segredo somente no estado transitório da tela; a conclusão é pública e envia token e nova senha diretamente para `POST /auth/ativacoes`. Token, senha e confirmação não são gravados em storage, URL ou logs e são descartados após a conclusão.
+
 ## Decisão de início
 
 Não há bloqueio para criar o scaffold, autenticação, cadastro vinculado, fila e comandos de execução. Busca operacional avançada e CORS devem ser resolvidos antes da homologação das telas afetadas.

@@ -1,0 +1,58 @@
+<main class="request-page" aria-labelledby="request-title">
+  <section class="request-card">
+    <header>
+      <p class="eyebrow">Administração</p>
+      <h1 id="request-title">Gerar token de ativação</h1>
+      <p>Gere um segredo de uso único para um usuário operacional ainda sem senha.</p>
+    </header>
+
+    @if (activation(); as result) {
+      <app-alert title="Token gerado" tone="warning">
+        <p>Copie e entregue o token por um canal seguro. Ele só aparece nesta tela.</p>
+      </app-alert>
+      <div class="token-result" aria-live="polite">
+        <span>Token de ativação</span>
+        <output>{{ result.token }}</output>
+        <small>Expira em {{ result.expiresAt | date: 'dd/MM/yyyy HH:mm:ss' }}.</small>
+      </div>
+    }
+
+    @if (failure()) {
+      <app-alert title="Não foi possível gerar o token" tone="danger">
+        <p>{{ failure() }}</p>
+        @if (correlationId()) {
+          <p class="correlation">Referência: {{ correlationId() }}</p>
+        }
+      </app-alert>
+    }
+
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <app-form-field
+        inputId="user-id"
+        label="ID do usuário"
+        hint="Informe o UUID canônico retornado pelo cadastro de usuários."
+        messageId="user-id-message"
+        [required]="true"
+        [error]="
+          form.controls.userId.touched && form.controls.userId.invalid
+            ? 'Informe um UUID válido.'
+            : undefined
+        "
+      >
+        <input
+          id="user-id"
+          formControlName="userId"
+          autocomplete="off"
+          aria-describedby="user-id-message"
+        />
+      </app-form-field>
+
+      <div class="actions">
+        <button class="ui-button ui-button--primary" type="submit" [disabled]="pending()">
+          {{ pending() ? 'Gerando…' : 'Gerar token' }}
+        </button>
+        <a class="ui-button ui-button--secondary" routerLink="/session">Voltar</a>
+      </div>
+    </form>
+  </section>
+</main>
