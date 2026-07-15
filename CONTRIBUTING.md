@@ -9,8 +9,8 @@ Confirme que a tela usa uma rota presente nas OpenAPI do `oficina-platform`. Se 
 1. Escolha o próximo item aberto do roadmap do frontend.
 2. Crie ou atualize os testes antes de concluir a implementação.
 3. Execute format check, lint, testes, testes arquiteturais e build.
-4. Revise acessibilidade, erros, loading e dados sensíveis.
-5. Use commit local em português seguindo Conventional Commits.
+
+O comando `npm run test:ci` aplica os pisos globais de cobertura definidos em `angular.json`: 80% para statements e linhas, 70% para branches e 60% para funções. Novas entregas não devem reduzir esses limites; aumentos devem ser graduais e acompanhados por testes de comportamento relevante. 4. Revise acessibilidade, erros, loading e dados sensíveis. 5. Use commit local em português seguindo Conventional Commits.
 
 ## Checklist de revisão
 
