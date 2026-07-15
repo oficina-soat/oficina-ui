@@ -67,6 +67,14 @@ export const routes: Routes = [
         data: { breadcrumb: 'Consultar ordem de serviço' },
       },
       {
+        path: 'fila-execucao',
+        canActivate: [roleGuard],
+        data: { roles: ['mecanico'], breadcrumb: 'Fila de execução' },
+        loadComponent: () =>
+          import('./features/execution/presentation').then(({ ExecutionQueue }) => ExecutionQueue),
+        title: 'Fila de execução | Oficina SOAT',
+      },
+      {
         path: 'administracao/ativacoes/nova',
         canActivate: [roleGuard],
         data: { roles: ['administrativo'], breadcrumb: 'Ativação de credencial' },

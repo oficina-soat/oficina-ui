@@ -23,3 +23,23 @@ export interface ConsultarFilaQuery {
 export interface ExecutionGateway {
   consultarFila(query?: ConsultarFilaQuery): Promise<readonly FilaExecucao[]>;
 }
+
+export type ExecutionFailureReason =
+  'INVALID_INPUT' | 'UNAUTHENTICATED' | 'SERVICE_UNAVAILABLE' | 'UNKNOWN';
+
+export class ExecutionOperationError extends Error {
+  constructor(
+    readonly reason: ExecutionFailureReason,
+    readonly correlationId: string | null,
+  ) {
+    super(reason);
+  }
+}
+
+export class ListExecutionQueue {
+  constructor(private readonly gateway: ExecutionGateway) {}
+
+  execute(query: ConsultarFilaQuery = {}): Promise<readonly FilaExecucao[]> {
+    return this.gateway.consultarFila(query);
+  }
+}
