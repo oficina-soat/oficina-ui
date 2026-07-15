@@ -4,9 +4,9 @@
     <h1 id="orders-title">Ordens de serviço</h1>
     <p>Consulte as ordens paginadas e filtre pelo estado retornado pela API.</p>
   </header>
-  <form class="filters" (ngSubmit)="load(0)">
+  <form class="filters" [formGroup]="filters" (ngSubmit)="load(0)">
     <label for="order-state">Estado</label>
-    <select id="order-state" [formControl]="state">
+    <select id="order-state" formControlName="state">
       <option value="">Todos</option>
       @for (item of states; track item[0]) {
         <option [value]="item[0]">{{ item[1] }}</option>

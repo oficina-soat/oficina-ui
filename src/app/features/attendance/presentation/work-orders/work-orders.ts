@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, signal, type OnInit } from '@angular/core';
-import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
 import { Alert, DataTable, EmptyState, Loading, Pagination } from '../../../../shared/ui';
@@ -45,7 +45,9 @@ export class WorkOrders implements OnInit {
     WorkOrderState,
     string,
   ][];
-  readonly state = new FormControl<WorkOrderState | ''>('', { nonNullable: true });
+  readonly filters = new FormGroup({
+    state: new FormControl<WorkOrderState | ''>('', { nonNullable: true }),
+  });
 
   ngOnInit(): void {
     void this.load(0);
@@ -57,7 +59,7 @@ export class WorkOrders implements OnInit {
     this.failure.set(null);
     this.correlationId.set(null);
     try {
-      const state = this.state.value;
+      const state = this.filters.controls.state.value;
       this.page.set(await this.list.execute({ page, size: 20, ...(state ? { state } : {}) }));
     } catch (error: unknown) {
       const failure =

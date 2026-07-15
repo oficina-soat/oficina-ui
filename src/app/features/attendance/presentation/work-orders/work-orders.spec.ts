@@ -42,6 +42,38 @@ describe('WorkOrders', () => {
     expect(fixture.nativeElement.textContent).toContain('Veículo não liga');
   });
 
+  it('aplica o estado selecionado sem recarregar ou limpar o formulário', async () => {
+    const list = {
+      execute: vi.fn().mockResolvedValue({
+        items: [order],
+        page: 0,
+        size: 20,
+        totalItems: 1,
+        totalPages: 1,
+      }),
+    };
+    await TestBed.configureTestingModule({
+      imports: [WorkOrders],
+      providers: [provideRouter([]), { provide: LIST_WORK_ORDERS, useValue: list }],
+    }).compileComponents();
+    const fixture = TestBed.createComponent(WorkOrders);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const select = fixture.nativeElement.querySelector('#order-state') as HTMLSelectElement;
+    select.value = 'RECEBIDA';
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+    fixture.nativeElement
+      .querySelector('form')
+      .dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(list.execute).toHaveBeenLastCalledWith({ page: 0, size: 20, state: 'RECEBIDA' });
+    expect(select.value).toBe('RECEBIDA');
+  });
+
   it('abre a OS com o vínculo da URL e navega ao resultado canônico', async () => {
     const open = { execute: vi.fn().mockResolvedValue(order) };
     const route = {
