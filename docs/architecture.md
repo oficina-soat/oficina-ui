@@ -65,7 +65,7 @@ Arquivos gerados são versionados para builds reproduzíveis e não devem ser ed
 
 O `HttpClient` é configurado somente no composition root e usado dentro de `infrastructure`. Interceptors funcionais aplicam, nesta ordem:
 
-1. `Authorization: Bearer` a partir da sessão exclusivamente em memória, exceto quando a requisição é marcada como pública;
+1. `Authorization: Bearer` a partir da sessão da aba, exceto quando a requisição é marcada como pública;
 2. `X-Correlation-Id`, preservando o valor informado ou gerando um UUID por requisição;
 3. `X-Idempotency-Key` em `POST`/`PATCH` explicitamente marcados como comandos idempotentes;
 4. conversão de falhas HTTP para `ApiError`, preservando `code`, mensagem segura, detalhes e correlação do contrato canônico;
@@ -73,4 +73,4 @@ O `HttpClient` é configurado somente no composition root e usado dentro de `inf
 
 `idempotentCommandContext()` cria a chave quando o comando nasce. Reutilizar o mesmo contexto em uma nova tentativa preserva a chave; o interceptor nunca decide sozinho que uma leitura ou operação é idempotente. `publicRequestContext()` deve ser usado apenas em endpoints que não aceitam JWT, como emissão de token.
 
-Tokens não podem ser armazenados em `localStorage`, `sessionStorage`, cookies acessíveis ao JavaScript ou logs. A persistência de sessão só poderá mudar mediante decisão arquitetural específica.
+Tokens não podem ser armazenados em `localStorage`, cookies acessíveis ao JavaScript ou logs. Para permitir recarga da UI operacional, o token pode existir em `sessionStorage`, limitado à aba e à expiração informada pelo backend. Uma solução futura com BFF e cookie `HttpOnly` deve substituir esse compromisso quando o escopo justificar a infraestrutura adicional.

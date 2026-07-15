@@ -34,7 +34,7 @@ npm run api:sync
 npm run api:generate
 ```
 
-O acesso às APIs usa o pipeline transversal documentado em [Arquitetura e guardrails](docs/architecture.md): sessão em memória, correlação, erros canônicos e idempotência explícita para comandos.
+O acesso às APIs usa o pipeline transversal documentado em [Arquitetura e guardrails](docs/architecture.md): sessão limitada à aba, correlação, erros canônicos e idempotência explícita para comandos.
 
 ## Princípio arquitetural
 

@@ -45,7 +45,7 @@ Validar preflight, headers `Authorization`, `Content-Type`, `X-Correlation-Id` e
 
 ### Sessão
 
-O JWT emitido foi confirmado com `groups` contendo os papéis `administrativo`, `mecanico` e `recepcionista`; `expiresIn` continua definindo a duração da sessão em memória. A UI decodifica apenas `groups` para guards e navegação visual, sem validar assinatura no navegador e sem usar claims para autorização definitiva.
+O JWT emitido foi confirmado com `groups` contendo os papéis `administrativo`, `mecanico` e `recepcionista`; `expiresIn` define a duração da sessão da aba. A UI decodifica apenas `groups` para guards e navegação visual, sem validar assinatura no navegador e sem usar claims para autorização definitiva.
 
 O erro atual de autenticação usa o mesmo `motivo` (`Usuário inativo`) para usuário `INATIVO`, `BLOQUEADO` ou sem senha ativada. A UI apresenta orientação única de conta indisponível. Se o produto exigir mensagens distintas, o contrato deve fornecer códigos estáveis sem facilitar enumeração de usuários.
 

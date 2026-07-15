@@ -4,7 +4,7 @@
     <h1 id="session-title">Sessão operacional</h1>
     @if (session.session(); as activeSession) {
       <app-alert title="Autenticação concluída" tone="success">
-        <p>A sessão está somente na memória deste navegador.</p>
+        <p>A sessão permanece nesta aba até o logout ou a expiração.</p>
       </app-alert>
       <p>Expira em {{ activeSession.expiresAt | date: 'dd/MM/yyyy HH:mm:ss' }}.</p>
       <p>
