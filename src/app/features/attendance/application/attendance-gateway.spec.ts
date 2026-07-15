@@ -29,6 +29,27 @@ const gateway = (): AttendanceGateway => ({
     marca: 'Volkswagen',
     modelo: 'Gol',
   }),
+  listarOrdensServico: vi
+    .fn()
+    .mockResolvedValue({ items: [], page: 0, size: 20, totalItems: 0, totalPages: 0 }),
+  consultarOrdemServico: vi.fn().mockResolvedValue({
+    id: 'os-1',
+    clienteId: 'cliente-1',
+    veiculoId: 'veiculo-1',
+    problemDescription: 'Não liga',
+    state: 'RECEBIDA',
+    createdAt: '2026-07-15T12:00:00Z',
+    updatedAt: '2026-07-15T12:00:00Z',
+  }),
+  abrirOrdemServico: vi.fn().mockResolvedValue({
+    id: 'os-1',
+    clienteId: 'cliente-1',
+    veiculoId: 'veiculo-1',
+    problemDescription: 'Não liga',
+    state: 'RECEBIDA',
+    createdAt: '2026-07-15T12:00:00Z',
+    updatedAt: '2026-07-15T12:00:00Z',
+  }),
 });
 
 describe('casos de uso de clientes', () => {

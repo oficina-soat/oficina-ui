@@ -78,12 +78,64 @@ export class VehicleOperationError extends Error {
   }
 }
 
+export type WorkOrderState =
+  | 'RECEBIDA'
+  | 'EM_DIAGNOSTICO'
+  | 'AGUARDANDO_APROVACAO'
+  | 'EM_EXECUCAO'
+  | 'FINALIZADA'
+  | 'ENTREGUE';
+
+export interface WorkOrderSummary {
+  readonly id: string;
+  readonly clienteId: string;
+  readonly veiculoId: string;
+  readonly problemDescription: string;
+  readonly state: WorkOrderState;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+}
+
+export interface ListWorkOrdersQuery {
+  readonly page?: number;
+  readonly size?: number;
+  readonly state?: WorkOrderState;
+}
+
+export interface OpenWorkOrderCommand {
+  readonly clienteId: string;
+  readonly veiculoId: string;
+  readonly problemDescription: string;
+  readonly idempotencyKey: string;
+}
+
+export type WorkOrderFailureReason =
+  | 'INVALID_INPUT'
+  | 'CONFLICT'
+  | 'NOT_FOUND'
+  | 'UNAUTHENTICATED'
+  | 'SERVICE_UNAVAILABLE'
+  | 'UNKNOWN';
+
+export class WorkOrderOperationError extends Error {
+  constructor(
+    readonly reason: WorkOrderFailureReason,
+    readonly correlationId: string | null,
+    readonly details: readonly string[] = [],
+  ) {
+    super(reason);
+  }
+}
+
 export interface AttendanceGateway {
   consultarClientes(query?: ConsultarClientesQuery): Promise<Pagina<ClienteResumo>>;
   criarCliente(command: CriarClienteCommand): Promise<ClienteResumo>;
   consultarCliente(clienteId: string): Promise<ClienteResumo>;
   consultarVeiculos(clienteId: string): Promise<readonly VeiculoResumo[]>;
   criarVeiculo(command: CriarVeiculoCommand): Promise<VeiculoResumo>;
+  listarOrdensServico(query?: ListWorkOrdersQuery): Promise<Pagina<WorkOrderSummary>>;
+  consultarOrdemServico(id: string): Promise<WorkOrderSummary>;
+  abrirOrdemServico(command: OpenWorkOrderCommand): Promise<WorkOrderSummary>;
 }
 
 export class ListClients {
@@ -124,5 +176,26 @@ export class CreateVehicle {
 
   execute(command: CriarVeiculoCommand): Promise<VeiculoResumo> {
     return this.gateway.criarVeiculo(command);
+  }
+}
+
+export class ListWorkOrders {
+  constructor(private readonly gateway: AttendanceGateway) {}
+  execute(query: ListWorkOrdersQuery = {}): Promise<Pagina<WorkOrderSummary>> {
+    return this.gateway.listarOrdensServico(query);
+  }
+}
+
+export class GetWorkOrder {
+  constructor(private readonly gateway: AttendanceGateway) {}
+  execute(id: string): Promise<WorkOrderSummary> {
+    return this.gateway.consultarOrdemServico(id);
+  }
+}
+
+export class OpenWorkOrder {
+  constructor(private readonly gateway: AttendanceGateway) {}
+  execute(command: OpenWorkOrderCommand): Promise<WorkOrderSummary> {
+    return this.gateway.abrirOrdemServico(command);
   }
 }

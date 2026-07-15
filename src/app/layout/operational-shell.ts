@@ -64,6 +64,7 @@ export class OperationalShell {
     const items: NavigationItem[] = [
       { label: 'Início', href: '/session' },
       { label: 'Clientes', href: '/clientes' },
+      { label: 'Ordens de serviço', href: '/ordens-servico' },
     ];
     if (this.session.hasAnyRole(['administrativo'])) {
       items.push({ label: 'Ativação de credencial', href: '/administracao/ativacoes/nova' });

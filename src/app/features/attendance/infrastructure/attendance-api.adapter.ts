@@ -17,8 +17,19 @@ import {
   VehicleOperationError,
   type VehicleFailureReason,
   type VeiculoResumo,
+  type ListWorkOrdersQuery,
+  type OpenWorkOrderCommand,
+  WorkOrderOperationError,
+  type WorkOrderFailureReason,
+  type WorkOrderSummary,
 } from '../application';
-import type { Cliente, ConsultarClientesResponse, Veiculo } from './generated/types.gen';
+import type {
+  Cliente,
+  ConsultarClientesResponse,
+  ConsultarOrdensServicoResponse,
+  OrdemServico,
+  Veiculo,
+} from './generated/types.gen';
 
 const mapCliente = (cliente: Cliente): ClienteResumo => ({
   id: cliente.clienteId,
@@ -35,6 +46,16 @@ const mapVeiculo = (vehicle: Veiculo): VeiculoResumo => ({
   marca: vehicle.marca,
   modelo: vehicle.modelo,
   ...(vehicle.ano === undefined ? {} : { ano: vehicle.ano }),
+});
+
+const mapWorkOrder = (order: OrdemServico): WorkOrderSummary => ({
+  id: order.ordemServicoId,
+  clienteId: order.clienteId,
+  veiculoId: order.veiculoId,
+  problemDescription: order.descricaoProblema,
+  state: order.estado,
+  createdAt: order.criadoEm,
+  updatedAt: order.atualizadoEm,
 });
 
 @Injectable({ providedIn: 'root' })
@@ -142,6 +163,61 @@ export class AttendanceApiAdapter implements AttendanceGateway {
     }
   }
 
+  async listarOrdensServico(query: ListWorkOrdersQuery = {}): Promise<Pagina<WorkOrderSummary>> {
+    let params = new HttpParams();
+    if (query.page !== undefined) params = params.set('page', query.page);
+    if (query.size !== undefined) params = params.set('size', query.size);
+    if (query.state !== undefined) params = params.set('estado', query.state);
+    try {
+      const data = await firstValueFrom(
+        this.http.get<ConsultarOrdensServicoResponse>(`${this.config.apiBaseUrl}/ordens-servico`, {
+          params,
+        }),
+      );
+      return {
+        items: (data.items ?? []).map(mapWorkOrder),
+        page: data.page,
+        size: data.size,
+        totalItems: data.totalItems,
+        totalPages: data.totalPages,
+      };
+    } catch (error: unknown) {
+      throw this.workOrderError(error);
+    }
+  }
+
+  async consultarOrdemServico(id: string): Promise<WorkOrderSummary> {
+    try {
+      const data = await firstValueFrom(
+        this.http.get<OrdemServico>(
+          `${this.config.apiBaseUrl}/ordens-servico/${encodeURIComponent(id)}`,
+        ),
+      );
+      return mapWorkOrder(data);
+    } catch (error: unknown) {
+      throw this.workOrderError(error);
+    }
+  }
+
+  async abrirOrdemServico(command: OpenWorkOrderCommand): Promise<WorkOrderSummary> {
+    try {
+      const data = await firstValueFrom(
+        this.http.post<OrdemServico>(
+          `${this.config.apiBaseUrl}/ordens-servico`,
+          {
+            clienteId: command.clienteId,
+            veiculoId: command.veiculoId,
+            descricaoProblema: command.problemDescription,
+          },
+          { context: idempotentCommandContext(command.idempotencyKey) },
+        ),
+      );
+      return mapWorkOrder(data);
+    } catch (error: unknown) {
+      throw this.workOrderError(error);
+    }
+  }
+
   private clientError(error: unknown): ClientOperationError {
     if (!(error instanceof ApiError)) return new ClientOperationError('SERVICE_UNAVAILABLE', null);
     const reasons: Readonly<Record<number, ClientFailureReason>> = {
@@ -169,6 +245,25 @@ export class AttendanceApiAdapter implements AttendanceGateway {
       409: 'DUPLICATE',
     };
     return new VehicleOperationError(
+      error.status === 0 || error.status >= 500
+        ? 'SERVICE_UNAVAILABLE'
+        : (reasons[error.status] ?? 'UNKNOWN'),
+      error.correlationId,
+      error.details.map((detail) => detail.message),
+    );
+  }
+
+  private workOrderError(error: unknown): WorkOrderOperationError {
+    if (!(error instanceof ApiError)) {
+      return new WorkOrderOperationError('SERVICE_UNAVAILABLE', null);
+    }
+    const reasons: Readonly<Record<number, WorkOrderFailureReason>> = {
+      400: 'INVALID_INPUT',
+      401: 'UNAUTHENTICATED',
+      404: 'NOT_FOUND',
+      409: 'CONFLICT',
+    };
+    return new WorkOrderOperationError(
       error.status === 0 || error.status >= 500
         ? 'SERVICE_UNAVAILABLE'
         : (reasons[error.status] ?? 'UNKNOWN'),

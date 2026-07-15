@@ -162,6 +162,7 @@
               <th scope="col">Marca</th>
               <th scope="col">Modelo</th>
               <th scope="col">Ano</th>
+              <th scope="col">Ação</th>
             </tr>
           </thead>
           <tbody>
@@ -171,6 +172,13 @@
                 <td>{{ vehicle.marca }}</td>
                 <td>{{ vehicle.modelo }}</td>
                 <td>{{ vehicle.ano ?? '—' }}</td>
+                <td>
+                  <a
+                    [routerLink]="['/ordens-servico/nova']"
+                    [queryParams]="{ clienteId: result.client.id, veiculoId: vehicle.id }"
+                    >Abrir OS</a
+                  >
+                </td>
               </tr>
             }
           </tbody>

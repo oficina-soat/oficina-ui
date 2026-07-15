@@ -1,0 +1,79 @@
+<section class="orders-page" aria-labelledby="orders-title">
+  <header>
+    <p class="eyebrow">Atendimento</p>
+    <h1 id="orders-title">Ordens de serviço</h1>
+    <p>Consulte as ordens paginadas e filtre pelo estado retornado pela API.</p>
+  </header>
+  <form class="filters" (ngSubmit)="load(0)">
+    <label for="order-state">Estado</label>
+    <select id="order-state" [formControl]="state">
+      <option value="">Todos</option>
+      @for (item of states; track item[0]) {
+        <option [value]="item[0]">{{ item[1] }}</option>
+      }
+    </select>
+    <button class="ui-button ui-button--secondary" type="submit" [disabled]="loading()">
+      Aplicar filtro
+    </button>
+  </form>
+  @if (failure()) {
+    <app-alert title="Não foi possível consultar" tone="danger"
+      ><p>{{ failure() }}</p>
+      @if (correlationId()) {
+        <p>Referência: {{ correlationId() }}</p>
+      }
+    </app-alert>
+  }
+  @if (loading() && !page()) {
+    <app-loading label="Carregando ordens de serviço" />
+  } @else if (page(); as result) {
+    @if (loading()) {
+      <app-loading label="Atualizando ordens de serviço" />
+    }
+    @if (result.items.length === 0) {
+      <app-empty-state
+        title="Nenhuma ordem encontrada"
+        description="Não há ordens para a página e o filtro informados."
+      />
+    } @else {
+      <app-data-table label="Ordens de serviço"
+        ><table>
+          <caption>
+            {{
+              result.totalItems
+            }}
+            ordem(ns) encontrada(s)
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">OS</th>
+              <th scope="col">Estado</th>
+              <th scope="col">Problema</th>
+              <th scope="col">Ação</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (order of result.items; track order.id) {
+              <tr>
+                <td>{{ shortId(order.id) }}</td>
+                <td>{{ stateLabel(order.state) }}</td>
+                <td>{{ order.problemDescription }}</td>
+                <td><a [routerLink]="['/ordens-servico', order.id]">Consultar</a></td>
+              </tr>
+            }
+          </tbody>
+        </table></app-data-table
+      >
+      <app-pagination
+        [currentPage]="result.page + 1"
+        [totalPages]="result.totalPages"
+        label="Paginação de ordens"
+        (pageChange)="load($event - 1)"
+      />
+    }
+  } @else if (failure()) {
+    <button class="ui-button ui-button--secondary" type="button" (click)="load(0)">
+      Tentar novamente
+    </button>
+  }
+</section>

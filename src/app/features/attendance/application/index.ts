@@ -9,8 +9,13 @@ export type {
   CriarClienteCommand,
   CriarVeiculoCommand,
   Pagina,
+  ListWorkOrdersQuery,
+  OpenWorkOrderCommand,
   VehicleFailureReason,
   VeiculoResumo,
+  WorkOrderFailureReason,
+  WorkOrderState,
+  WorkOrderSummary,
 } from './attendance-gateway';
 export {
   ClientOperationError,
@@ -18,5 +23,9 @@ export {
   CreateVehicle,
   ListClients,
   LoadClientVehicles,
+  GetWorkOrder,
+  ListWorkOrders,
+  OpenWorkOrder,
   VehicleOperationError,
+  WorkOrderOperationError,
 } from './attendance-gateway';

@@ -44,6 +44,29 @@ export const routes: Routes = [
         data: { breadcrumb: 'Veículos' },
       },
       {
+        path: 'ordens-servico',
+        loadComponent: () =>
+          import('./features/attendance/presentation').then(({ WorkOrders }) => WorkOrders),
+        title: 'Ordens de serviço | Oficina SOAT',
+        data: { breadcrumb: 'Ordens de serviço' },
+      },
+      {
+        path: 'ordens-servico/nova',
+        loadComponent: () =>
+          import('./features/attendance/presentation').then(({ NewWorkOrder }) => NewWorkOrder),
+        title: 'Abrir ordem de serviço | Oficina SOAT',
+        data: { breadcrumb: 'Abrir ordem de serviço' },
+      },
+      {
+        path: 'ordens-servico/:ordemServicoId',
+        loadComponent: () =>
+          import('./features/attendance/presentation').then(
+            ({ WorkOrderDetail }) => WorkOrderDetail,
+          ),
+        title: 'Consultar ordem de serviço | Oficina SOAT',
+        data: { breadcrumb: 'Consultar ordem de serviço' },
+      },
+      {
         path: 'administracao/ativacoes/nova',
         canActivate: [roleGuard],
         data: { roles: ['administrativo'], breadcrumb: 'Ativação de credencial' },

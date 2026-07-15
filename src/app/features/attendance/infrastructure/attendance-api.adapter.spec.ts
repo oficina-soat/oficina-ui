@@ -152,4 +152,71 @@ describe('AttendanceApiAdapter', () => {
     });
     await expect(result).resolves.toMatchObject({ id: 'veiculo-1', clienteId: 'cliente-1' });
   });
+
+  it('lista ordens com paginação e filtro canônico de estado', async () => {
+    const result = adapter.listarOrdensServico({ page: 1, size: 20, state: 'RECEBIDA' });
+    const request = httpTesting.expectOne(
+      'https://api.example/api/v1/ordens-servico?page=1&size=20&estado=RECEBIDA',
+    );
+    request.flush({
+      items: [
+        {
+          ordemServicoId: 'os-1',
+          clienteId: 'cliente-1',
+          veiculoId: 'veiculo-1',
+          descricaoProblema: 'Não liga',
+          estado: 'RECEBIDA',
+          criadoEm: '2026-07-15T12:00:00Z',
+          atualizadoEm: '2026-07-15T12:00:00Z',
+        },
+      ],
+      page: 1,
+      size: 20,
+      totalItems: 21,
+      totalPages: 2,
+    });
+    await expect(result).resolves.toMatchObject({
+      page: 1,
+      totalItems: 21,
+      items: [{ id: 'os-1', state: 'RECEBIDA' }],
+    });
+  });
+
+  it('abre e consulta ordem de serviço pelas rotas contratuais', async () => {
+    const openResult = adapter.abrirOrdemServico({
+      clienteId: 'cliente-1',
+      veiculoId: 'veiculo-1',
+      problemDescription: 'Não liga',
+      idempotencyKey: 'order-key-123',
+    });
+    const openRequest = httpTesting.expectOne('https://api.example/api/v1/ordens-servico');
+    expect(openRequest.request.headers.get('X-Idempotency-Key')).toBe('order-key-123');
+    expect(openRequest.request.body).toEqual({
+      clienteId: 'cliente-1',
+      veiculoId: 'veiculo-1',
+      descricaoProblema: 'Não liga',
+    });
+    openRequest.flush({
+      ordemServicoId: 'os-1',
+      clienteId: 'cliente-1',
+      veiculoId: 'veiculo-1',
+      descricaoProblema: 'Não liga',
+      estado: 'RECEBIDA',
+      criadoEm: '2026-07-15T12:00:00Z',
+      atualizadoEm: '2026-07-15T12:00:00Z',
+    });
+    await expect(openResult).resolves.toMatchObject({ id: 'os-1' });
+
+    const getResult = adapter.consultarOrdemServico('os/1');
+    httpTesting.expectOne('https://api.example/api/v1/ordens-servico/os%2F1').flush({
+      ordemServicoId: 'os-1',
+      clienteId: 'cliente-1',
+      veiculoId: 'veiculo-1',
+      descricaoProblema: 'Não liga',
+      estado: 'RECEBIDA',
+      criadoEm: '2026-07-15T12:00:00Z',
+      atualizadoEm: '2026-07-15T12:00:00Z',
+    });
+    await expect(getResult).resolves.toMatchObject({ id: 'os-1', problemDescription: 'Não liga' });
+  });
 });
