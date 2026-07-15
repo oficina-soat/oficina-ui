@@ -185,8 +185,13 @@ textarea {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ui-loading__spinner {
-    animation-duration: 2s;
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
 
@@ -427,5 +432,11 @@ textarea {
   .ui-dialog__actions {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .ui-shell__identity,
+  .ui-shell__identity .ui-button,
+  .ui-dialog__actions .ui-button {
+    width: 100%;
   }
 }

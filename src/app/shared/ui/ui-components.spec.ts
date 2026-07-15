@@ -43,15 +43,31 @@ describe('componentes básicos de UI', () => {
     expect(pageChange).toHaveBeenCalledWith(2);
   });
 
-  it('expõe confirmação como diálogo modal acessível', () => {
+  it('expõe confirmação como diálogo modal acessível e confina o foco', async () => {
+    const origin = document.createElement('button');
+    document.body.appendChild(origin);
+    origin.focus();
     const fixture = TestBed.createComponent(Confirmation);
     fixture.componentRef.setInput('title', 'Confirmar');
     fixture.componentRef.setInput('description', 'Descrição segura');
     fixture.componentRef.setInput('open', true);
     fixture.detectChanges();
+    await fixture.whenStable();
     const dialog = fixture.nativeElement.querySelector('[role="alertdialog"]');
+    const buttons = dialog.querySelectorAll('button') as NodeListOf<HTMLButtonElement>;
     expect(dialog.getAttribute('aria-modal')).toBe('true');
     expect(dialog.getAttribute('aria-labelledby')).toBeTruthy();
+    expect(document.activeElement).toBe(buttons[0]);
+
+    buttons[1]?.focus();
+    buttons[1]?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
+    expect(document.activeElement).toBe(buttons[0]);
+
+    fixture.componentRef.setInput('open', false);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(document.activeElement).toBe(origin);
+    origin.remove();
   });
 
   it('oferece navegação responsiva e breadcrumb acessíveis', () => {

@@ -1,5 +1,17 @@
-import { ChangeDetectionStrategy, Component, input, output, signal } from '@angular/core';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  type ElementRef,
+  inject,
+  input,
+  output,
+  signal,
+  viewChild,
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { filter, skip } from 'rxjs';
 
 export interface NavigationItem {
   readonly label: string;
@@ -44,7 +56,7 @@ export interface NavigationItem {
           }
         </nav>
       </aside>
-      <main class="ui-shell__main" id="main-content" tabindex="-1">
+      <main #mainContent class="ui-shell__main" id="main-content" tabindex="-1">
         <nav class="ui-shell__breadcrumb" aria-label="Caminho da página">
           <ol>
             @for (item of breadcrumb(); track $index; let last = $last) {
@@ -59,10 +71,26 @@ export interface NavigationItem {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Shell {
+  private readonly router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly mainContent = viewChild<ElementRef<HTMLElement>>('mainContent');
   readonly brand = input('Oficina SOAT');
   readonly userLabel = input.required<string>();
   readonly navigation = input.required<readonly NavigationItem[]>();
   readonly breadcrumb = input<readonly string[]>([]);
   readonly logout = output<void>();
   protected readonly menuOpen = signal(false);
+
+  constructor() {
+    this.router.events
+      .pipe(
+        filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+        skip(1),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe(() => {
+        this.menuOpen.set(false);
+        queueMicrotask(() => this.mainContent()?.nativeElement.focus());
+      });
+  }
 }

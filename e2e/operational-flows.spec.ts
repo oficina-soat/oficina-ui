@@ -1,4 +1,5 @@
 import { expect, test, type Page, type Route } from '@playwright/test';
+import AxeBuilder from '@axe-core/playwright';
 
 const cpf = '84191404067';
 const password = 'secret';
@@ -101,6 +102,43 @@ const login = async (page: Page): Promise<void> => {
   await page.getByLabel('Senha').fill(password);
   await page.getByRole('button', { name: 'Entrar' }).click();
 };
+
+const expectNoAccessibilityViolations = async (page: Page): Promise<void> => {
+  const results = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+    .analyze();
+  expect(results.violations).toEqual([]);
+};
+
+test('fluxo de login e shell não apresentam violações WCAG automatizáveis', async ({ page }) => {
+  await mockApi(page);
+  await page.goto('/login');
+  await expectNoAccessibilityViolations(page);
+
+  await page.getByLabel('CPF').fill(cpf);
+  await page.getByLabel('Senha').fill(password);
+  await page.getByRole('button', { name: 'Entrar' }).click();
+  await expect(page).toHaveURL(/\/session$/);
+  await expectNoAccessibilityViolations(page);
+});
+
+test('shell móvel mantém menu e conteúdo acessíveis por teclado', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 667 });
+  await mockApi(page);
+  await login(page);
+
+  const menu = page.getByRole('button', { name: 'Menu' });
+  await expect(menu).toBeVisible();
+  await menu.focus();
+  await page.keyboard.press('Enter');
+  await expect(menu).toHaveAttribute('aria-expanded', 'true');
+  await expect(page.getByRole('navigation', { name: 'Navegação principal' })).toBeVisible();
+
+  await page.getByRole('link', { name: 'Clientes', exact: true }).click();
+  await expect(page.locator('#main-content')).toBeFocused();
+  await expect(page.getByRole('heading', { name: 'Clientes', exact: true })).toBeVisible();
+  await expectNoAccessibilityViolations(page);
+});
 
 test('login abre a visão operacional e permite consultar atendimento', async ({ page }) => {
   await mockApi(page);
