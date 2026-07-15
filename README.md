@@ -50,6 +50,7 @@ flowchart LR
 ## Documentação
 
 - [Arquitetura e guardrails](docs/architecture.md)
+- [Design system operacional](docs/design-system.md)
 - [Escopo do MVP](docs/product-scope.md)
 - [Prontidão das APIs](docs/api-readiness.md)
 - [Wireframes](docs/wireframes.md)

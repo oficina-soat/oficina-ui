@@ -14,11 +14,12 @@ describe('App', () => {
     expect(app).toBeTruthy();
   });
 
-  it('should identify the placeholder accessibly', async () => {
+  it('identifica a referência visual e a navegação de forma acessível', async () => {
     const fixture = TestBed.createComponent(App);
     await fixture.whenStable();
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('main')?.getAttribute('aria-labelledby')).toBe('page-title');
-    expect(compiled.querySelector('h1')?.textContent).toContain('Interface operacional');
+    expect(compiled.querySelector('main')?.id).toBe('main-content');
+    expect(compiled.querySelector('h1')?.textContent).toContain('Componentes operacionais');
+    expect(compiled.querySelector('nav')?.getAttribute('aria-label')).toBe('Navegação principal');
   });
 });
