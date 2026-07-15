@@ -30,6 +30,13 @@ export const routes: Routes = [
         data: { breadcrumb: 'Início' },
       },
       {
+        path: 'clientes',
+        loadComponent: () =>
+          import('./features/attendance/presentation').then(({ Clients }) => Clients),
+        title: 'Clientes | Oficina SOAT',
+        data: { breadcrumb: 'Clientes' },
+      },
+      {
         path: 'administracao/ativacoes/nova',
         canActivate: [roleGuard],
         data: { roles: ['administrativo'], breadcrumb: 'Ativação de credencial' },

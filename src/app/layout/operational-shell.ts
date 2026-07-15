@@ -61,7 +61,10 @@ export class OperationalShell {
   });
 
   protected readonly navigation = computed<readonly NavigationItem[]>(() => {
-    const items: NavigationItem[] = [{ label: 'Início', href: '/session' }];
+    const items: NavigationItem[] = [
+      { label: 'Início', href: '/session' },
+      { label: 'Clientes', href: '/clientes' },
+    ];
     if (this.session.hasAnyRole(['administrativo'])) {
       items.push({ label: 'Ativação de credencial', href: '/administracao/ativacoes/nova' });
     }

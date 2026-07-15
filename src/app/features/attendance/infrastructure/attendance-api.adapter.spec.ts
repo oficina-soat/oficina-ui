@@ -1,9 +1,11 @@
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { RUNTIME_CONFIG } from '../../../core/config/runtime-config';
+import { apiErrorInterceptor, idempotencyInterceptor } from '../../../core/http/api.interceptors';
+import { ClientOperationError } from '../application';
 import { AttendanceApiAdapter } from './attendance-api.adapter';
 
 describe('AttendanceApiAdapter', () => {
@@ -13,7 +15,7 @@ describe('AttendanceApiAdapter', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       providers: [
-        provideHttpClient(),
+        provideHttpClient(withInterceptors([idempotencyInterceptor, apiErrorInterceptor])),
         provideHttpClientTesting(),
         {
           provide: RUNTIME_CONFIG,
@@ -50,5 +52,45 @@ describe('AttendanceApiAdapter', () => {
     const page = await result;
     expect(page.items).toEqual([{ id: 'cliente-1', nome: 'Ana', documento: '12345678901' }]);
     expect(page.totalItems).toBe(1);
+  });
+
+  it('cria cliente com a chave idempotente fornecida e omite campos ausentes', async () => {
+    const result = adapter.criarCliente({
+      nome: 'Ana',
+      documento: '12345678901',
+      idempotencyKey: 'command-key-123',
+    });
+    const request = httpTesting.expectOne('https://api.example/api/v1/clientes');
+    expect(request.request.headers.get('X-Idempotency-Key')).toBe('command-key-123');
+    expect(request.request.body).toEqual({ nome: 'Ana', documento: '12345678901' });
+    request.flush({
+      clienteId: 'cliente-1',
+      nome: 'Ana',
+      documento: '12345678901',
+      criadoEm: '2026-07-15T12:00:00Z',
+      atualizadoEm: '2026-07-15T12:00:00Z',
+    });
+
+    await expect(result).resolves.toEqual({
+      id: 'cliente-1',
+      nome: 'Ana',
+      documento: '12345678901',
+    });
+  });
+
+  it('mapeia conflito de cadastro sem expor o DTO HTTP', async () => {
+    const result = adapter.criarCliente({
+      nome: 'Ana',
+      documento: '12345678901',
+      idempotencyKey: 'command-key-123',
+    });
+    httpTesting
+      .expectOne('https://api.example/api/v1/clientes')
+      .flush(
+        { code: 'DUPLICATE', message: 'Cliente duplicado', timestamp: '2026-07-15T12:00:00Z' },
+        { status: 409, statusText: 'Conflict' },
+      );
+
+    await expect(result).rejects.toEqual(new ClientOperationError('DUPLICATE', null));
   });
 });

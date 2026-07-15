@@ -1,0 +1,174 @@
+<section class="clients-page" aria-labelledby="clients-title">
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">Atendimento</p>
+      <h1 id="clients-title">Clientes</h1>
+      <p>Consulte a lista paginada e cadastre clientes para os fluxos da oficina.</p>
+    </div>
+    <button class="ui-button ui-button--primary" type="button" (click)="openForm()">
+      Novo cliente
+    </button>
+  </header>
+
+  <app-alert title="Busca avançada ainda não disponível" tone="info">
+    <p>A API atual oferece paginação, mas ainda não possui filtros por nome, CPF ou e-mail.</p>
+  </app-alert>
+
+  @if (success()) {
+    <app-alert title="Cadastro concluído" tone="success"
+      ><p>{{ success() }}</p></app-alert
+    >
+  }
+
+  @if (failure()) {
+    <app-alert title="Não foi possível concluir" tone="danger">
+      <p>{{ failure() }}</p>
+      @for (detail of failureDetails(); track detail) {
+        <p>{{ detail }}</p>
+      }
+      @if (correlationId()) {
+        <p>Referência: {{ correlationId() }}</p>
+      }
+    </app-alert>
+  }
+
+  @if (formOpen()) {
+    <section class="client-form" aria-labelledby="client-form-title">
+      <h2 id="client-form-title">Cadastrar cliente</h2>
+      <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+        <app-form-field
+          inputId="client-name"
+          label="Nome"
+          messageId="client-name-message"
+          [required]="true"
+          [error]="
+            form.controls.nome.touched && form.controls.nome.invalid ? 'Informe o nome.' : undefined
+          "
+        >
+          <input
+            id="client-name"
+            formControlName="nome"
+            autocomplete="name"
+            aria-describedby="client-name-message"
+          />
+        </app-form-field>
+        <app-form-field
+          inputId="client-document"
+          label="CPF"
+          hint="Digite somente os 11 números."
+          messageId="client-document-message"
+          [required]="true"
+          [error]="
+            form.controls.documento.touched && form.controls.documento.invalid
+              ? 'Informe um CPF com 11 números.'
+              : undefined
+          "
+        >
+          <input
+            id="client-document"
+            formControlName="documento"
+            inputmode="numeric"
+            maxlength="11"
+            autocomplete="off"
+            aria-describedby="client-document-message"
+          />
+        </app-form-field>
+        <app-form-field inputId="client-phone" label="Telefone" messageId="client-phone-message">
+          <input
+            id="client-phone"
+            formControlName="telefone"
+            type="tel"
+            autocomplete="tel"
+            aria-describedby="client-phone-message"
+          />
+        </app-form-field>
+        <app-form-field
+          inputId="client-email"
+          label="E-mail"
+          messageId="client-email-message"
+          [error]="
+            form.controls.email.touched && form.controls.email.invalid
+              ? 'Informe um e-mail válido.'
+              : undefined
+          "
+        >
+          <input
+            id="client-email"
+            formControlName="email"
+            type="email"
+            autocomplete="email"
+            aria-describedby="client-email-message"
+          />
+        </app-form-field>
+        <div class="form-actions">
+          <button class="ui-button ui-button--primary" type="submit" [disabled]="saving()">
+            {{ saving() ? 'Salvando…' : 'Salvar cliente' }}
+          </button>
+          <button
+            class="ui-button ui-button--secondary"
+            type="button"
+            [disabled]="saving()"
+            (click)="closeForm()"
+          >
+            Cancelar
+          </button>
+        </div>
+      </form>
+    </section>
+  }
+
+  @if (loading() && !page()) {
+    <app-loading label="Carregando clientes" />
+  } @else if (page(); as result) {
+    @if (loading()) {
+      <app-loading label="Atualizando clientes" />
+    }
+    @if (result.items.length === 0) {
+      <app-empty-state
+        title="Nenhum cliente cadastrado"
+        description="Cadastre o primeiro cliente para iniciar um atendimento."
+        actionLabel="Cadastrar cliente"
+        (action)="openForm()"
+      />
+    } @else {
+      <app-data-table label="Clientes cadastrados">
+        <table>
+          <caption>
+            {{
+              result.totalItems
+            }}
+            cliente(s) encontrado(s)
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Nome</th>
+              <th scope="col">CPF</th>
+              <th scope="col">Telefone</th>
+              <th scope="col">E-mail</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (client of result.items; track client.id) {
+              <tr>
+                <td>{{ client.nome }}</td>
+                <td>{{ maskDocument(client.documento) }}</td>
+                <td>{{ client.telefone || '—' }}</td>
+                <td>{{ client.email || '—' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </app-data-table>
+      <app-pagination
+        [currentPage]="result.page + 1"
+        [totalPages]="result.totalPages"
+        label="Paginação de clientes"
+        (pageChange)="loadPage($event - 1)"
+      />
+    }
+  } @else if (failure()) {
+    <button class="ui-button ui-button--secondary" type="button" (click)="loadPage(0)">
+      Tentar novamente
+    </button>
+  }
+</section>
