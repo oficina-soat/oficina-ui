@@ -68,6 +68,14 @@ export class Clients implements OnInit {
       validators: [Validators.email],
     }),
   });
+  readonly filters = new FormGroup({
+    nome: new FormControl('', { nonNullable: true }),
+    documento: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.pattern(/^$|^\d{11}$/)],
+    }),
+    email: new FormControl('', { nonNullable: true, validators: [Validators.email] }),
+  });
 
   ngOnInit(): void {
     void this.loadPage(0);
@@ -78,12 +86,34 @@ export class Clients implements OnInit {
     this.loading.set(true);
     this.clearFailure();
     try {
-      this.page.set(await this.listClients.execute({ page, size: 20 }));
+      const filters = this.filters.getRawValue();
+      this.page.set(
+        await this.listClients.execute({
+          page,
+          size: 20,
+          ...this.optionalFilter('nome', filters.nome),
+          ...this.optionalFilter('documento', filters.documento),
+          ...this.optionalFilter('email', filters.email),
+        }),
+      );
     } catch (error: unknown) {
       this.handleFailure(error);
     } finally {
       this.loading.set(false);
     }
+  }
+
+  protected applyFilters(): void {
+    if (this.filters.invalid || this.loading()) {
+      this.filters.markAllAsTouched();
+      return;
+    }
+    void this.loadPage(0);
+  }
+
+  protected clearFilters(): void {
+    this.filters.reset();
+    void this.loadPage(0);
   }
 
   protected openForm(): void {
@@ -141,5 +171,13 @@ export class Clients implements OnInit {
     this.failure.set(null);
     this.failureDetails.set([]);
     this.correlationId.set(null);
+  }
+
+  private optionalFilter<K extends 'nome' | 'documento' | 'email'>(
+    key: K,
+    value: string,
+  ): Partial<Record<K, string>> {
+    const normalized = value.trim();
+    return normalized ? ({ [key]: normalized } as Record<K, string>) : {};
   }
 }

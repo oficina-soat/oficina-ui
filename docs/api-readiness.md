@@ -13,7 +13,7 @@
 | ---------------------- | ------------------------------------------------------------- | --------------------------------------------- |
 | Login por CPF e senha  | `POST /auth/token`                                            | Pronto                                        |
 | Ativação de credencial | `POST /auth/ativacoes`                                        | Pronto                                        |
-| Clientes               | `GET/POST /api/v1/clientes`, `GET/PUT /clientes/{id}`         | Parcial                                       |
+| Clientes               | `GET/POST /api/v1/clientes`, `GET/PUT /clientes/{id}`         | Pronto, com filtros por nome, CPF e e-mail    |
 | Veículos               | rotas por cliente e por ID                                    | Pronto para cadastro/consulta vinculada       |
 | Ordens de serviço      | listagem, abertura, detalhe, histórico, estado e cancelamento | Parcial                                       |
 | Fila do mecânico       | `GET /api/v1/execucoes/fila`                                  | Parcial: lista ordenada sem paginação         |
@@ -25,7 +25,7 @@
 
 ### Busca de clientes
 
-A listagem atual é paginada, mas não contrata busca por CPF, nome, e-mail ou placa. O MVP pode começar com paginação simples, porém uma operação cotidiana eficiente exige filtros implementados no OS. A UI não deve baixar todos os clientes e filtrar localmente.
+A listagem paginada contrata filtros opcionais por trecho de nome, CPF completo e trecho de e-mail. Os critérios são aplicados no OS antes da paginação; a UI envia os filtros como query parameters e não filtra resultados localmente. Busca por placa continua pertencendo às consultas de veículos ou a uma futura consulta operacional composta.
 
 ### Listagem de ordens
 
@@ -37,7 +37,7 @@ A fila retorna execuções ordenadas por prioridade e criação, com filtro opci
 
 ### Ações disponíveis
 
-Os contratos expõem estado e endpoints mutáveis, mas não uma lista explícita de ações permitidas. A primeira versão pode apresentar ações conforme papel/fluxo visual e sempre aceitar a rejeição do backend; não pode reproduzir a máquina de estados para decidir validade. Recomenda-se evoluir a representação de detalhe caso a experiência exija ações canônicas retornadas pelo serviço.
+Os detalhes de OS e execução expõem listas canônicas de ações permitidas. A UI renderiza exclusivamente essas ações, enquanto os serviços revalidam autorização e transição ao receber cada comando.
 
 ### CORS e configuração de origem
 
@@ -53,4 +53,4 @@ O fluxo de ativação preserva os dois passos do contrato serverless: a geraçã
 
 ## Decisão de início
 
-Não há bloqueio para criar o scaffold, autenticação, cadastro vinculado, fila e comandos de execução. Busca operacional avançada e CORS devem ser resolvidos antes da homologação das telas afetadas.
+Não há bloqueio contratual para autenticação, cadastro vinculado, pesquisa de clientes, fila e comandos de execução. CORS deve ser validado antes da hospedagem da UI em uma origem AWS própria.

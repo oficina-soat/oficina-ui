@@ -10,9 +10,56 @@
     </button>
   </header>
 
-  <app-alert title="Busca avançada ainda não disponível" tone="info">
-    <p>A API atual oferece paginação, mas ainda não possui filtros por nome, CPF ou e-mail.</p>
-  </app-alert>
+  <section class="client-filters" aria-labelledby="client-filters-title">
+    <h2 id="client-filters-title">Pesquisar clientes</h2>
+    <form [formGroup]="filters" (ngSubmit)="applyFilters()" novalidate>
+      <app-form-field inputId="filter-name" label="Nome">
+        <input id="filter-name" formControlName="nome" autocomplete="off" />
+      </app-form-field>
+      <app-form-field
+        inputId="filter-document"
+        label="CPF"
+        hint="Informe os 11 números para uma busca exata."
+        [error]="
+          filters.controls.documento.touched && filters.controls.documento.invalid
+            ? 'Informe um CPF com 11 números.'
+            : undefined
+        "
+      >
+        <input
+          id="filter-document"
+          formControlName="documento"
+          inputmode="numeric"
+          maxlength="11"
+          autocomplete="off"
+        />
+      </app-form-field>
+      <app-form-field
+        inputId="filter-email"
+        label="E-mail"
+        [error]="
+          filters.controls.email.touched && filters.controls.email.invalid
+            ? 'Informe um e-mail válido.'
+            : undefined
+        "
+      >
+        <input id="filter-email" formControlName="email" type="email" autocomplete="off" />
+      </app-form-field>
+      <div class="form-actions">
+        <button class="ui-button ui-button--primary" type="submit" [disabled]="loading()">
+          Pesquisar
+        </button>
+        <button
+          class="ui-button ui-button--secondary"
+          type="button"
+          [disabled]="loading()"
+          (click)="clearFilters()"
+        >
+          Limpar
+        </button>
+      </div>
+    </form>
+  </section>
 
   @if (success()) {
     <app-alert title="Cadastro concluído" tone="success"
@@ -125,8 +172,8 @@
     }
     @if (result.items.length === 0) {
       <app-empty-state
-        title="Nenhum cliente cadastrado"
-        description="Cadastre o primeiro cliente para iniciar um atendimento."
+        title="Nenhum cliente encontrado"
+        description="Revise os filtros ou cadastre um novo cliente para iniciar um atendimento."
         actionLabel="Cadastrar cliente"
         (action)="openForm()"
       />

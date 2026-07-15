@@ -173,6 +173,18 @@ export type ConsultarUsuariosData = {
     query?: {
         page?: number;
         size?: number;
+        /**
+         * Trecho do nome, sem distinção entre maiúsculas e minúsculas.
+         */
+        nome?: string;
+        /**
+         * CPF completo com 11 dígitos.
+         */
+        documento?: string;
+        /**
+         * Trecho do e-mail, sem distinção entre maiúsculas e minúsculas.
+         */
+        email?: string;
     };
     url: '/usuarios';
 };

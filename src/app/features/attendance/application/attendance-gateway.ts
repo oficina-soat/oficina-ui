@@ -26,6 +26,9 @@ export interface Pagina<T> {
 export interface ConsultarClientesQuery {
   readonly page?: number;
   readonly size?: number;
+  readonly nome?: string;
+  readonly documento?: string;
+  readonly email?: string;
   readonly correlationId?: string;
 }
 

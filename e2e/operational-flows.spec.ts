@@ -71,6 +71,7 @@ const mockApi = async (page: Page, options: ApiOptions = {}): Promise<void> => {
           prioridade: 10,
           criadoEm: '2026-07-15T12:00:00Z',
           atualizadoEm: '2026-07-15T12:00:00Z',
+          acoesPermitidas: ['INICIAR_DIAGNOSTICO', 'CANCELAR'],
         },
       });
       return;
@@ -109,7 +110,7 @@ test('login abre a visão operacional e permite consultar atendimento', async ({
   await expect(page.getByRole('heading', { name: 'Visão operacional' })).toBeVisible();
   await expect(page.getByText('8', { exact: true })).toHaveCount(2);
   await page.getByRole('link', { name: 'Clientes', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Clientes' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Clientes', exact: true })).toBeVisible();
 });
 
 test('login rejeitado apresenta erro sem criar sessão', async ({ page }) => {

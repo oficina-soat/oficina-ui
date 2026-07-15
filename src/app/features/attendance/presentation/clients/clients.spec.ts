@@ -72,7 +72,7 @@ describe('Clients', () => {
       email: '',
     });
     fixture.nativeElement
-      .querySelector('form')
+      .querySelector('.client-form form')
       .dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
     await fixture.whenStable();
     fixture.detectChanges();
@@ -86,5 +86,53 @@ describe('Clients', () => {
     expect(command.idempotencyKey).toMatch(/^[0-9a-f-]{36}$/);
     expect(listClients.execute).toHaveBeenCalledTimes(2);
     expect(fixture.nativeElement.textContent).toContain('cadastrado com sucesso');
+  });
+
+  it('envia filtros ao backend, preserva-os na paginação e permite limpá-los', async () => {
+    const listClients = {
+      execute: vi.fn().mockResolvedValue({
+        items: [],
+        page: 0,
+        size: 20,
+        totalItems: 0,
+        totalPages: 0,
+      }),
+    };
+    await TestBed.configureTestingModule({
+      imports: [Clients],
+      providers: [
+        provideRouter([]),
+        { provide: LIST_CLIENTS, useValue: listClients },
+        { provide: CREATE_CLIENT, useValue: { execute: vi.fn() } },
+      ],
+    }).compileComponents();
+    const fixture = TestBed.createComponent(Clients);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    fixture.componentInstance.filters.setValue({
+      nome: ' Ana ',
+      documento: '12345678901',
+      email: 'ana@example.com',
+    });
+    fixture.nativeElement
+      .querySelector('.client-filters form')
+      .dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    await fixture.whenStable();
+
+    expect(listClients.execute).toHaveBeenLastCalledWith({
+      page: 0,
+      size: 20,
+      nome: 'Ana',
+      documento: '12345678901',
+      email: 'ana@example.com',
+    });
+
+    const clearButton = [...fixture.nativeElement.querySelectorAll('.client-filters button')].find(
+      (button: HTMLButtonElement) => button.textContent?.includes('Limpar'),
+    ) as HTMLButtonElement;
+    clearButton.click();
+    await fixture.whenStable();
+    expect(listClients.execute).toHaveBeenLastCalledWith({ page: 0, size: 20 });
   });
 });

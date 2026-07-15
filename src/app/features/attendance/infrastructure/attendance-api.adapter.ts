@@ -80,6 +80,9 @@ export class AttendanceApiAdapter implements AttendanceGateway {
     let params = new HttpParams();
     if (query.page !== undefined) params = params.set('page', query.page);
     if (query.size !== undefined) params = params.set('size', query.size);
+    if (query.nome) params = params.set('nome', query.nome);
+    if (query.documento) params = params.set('documento', query.documento);
+    if (query.email) params = params.set('email', query.email);
     const headers = query.correlationId
       ? new HttpHeaders({ 'X-Correlation-Id': query.correlationId })
       : undefined;

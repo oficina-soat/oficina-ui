@@ -24,7 +24,8 @@
   text-transform: uppercase;
 }
 
-.client-form {
+.client-form,
+.client-filters {
   padding: var(--space-6);
   border: 1px solid var(--color-neutral-300);
   border-radius: var(--radius-md);
@@ -66,11 +67,13 @@ table {
     flex-direction: column;
   }
 
-  .client-form form {
+  .client-form form,
+  .client-filters form {
     grid-template-columns: 1fr;
   }
 
-  .client-form .form-actions {
+  .client-form .form-actions,
+  .client-filters .form-actions {
     grid-column: auto;
   }
 }

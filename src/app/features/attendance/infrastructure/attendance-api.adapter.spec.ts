@@ -31,8 +31,16 @@ describe('AttendanceApiAdapter', () => {
   });
 
   it('mapeia a página de clientes para o modelo da aplicação', async () => {
-    const result = adapter.consultarClientes({ page: 0, size: 20 });
-    const request = httpTesting.expectOne('https://api.example/api/v1/clientes?page=0&size=20');
+    const result = adapter.consultarClientes({
+      page: 0,
+      size: 20,
+      nome: 'Ana',
+      documento: '12345678901',
+      email: 'ana@example.com',
+    });
+    const request = httpTesting.expectOne(
+      'https://api.example/api/v1/clientes?page=0&size=20&nome=Ana&documento=12345678901&email=ana@example.com',
+    );
     request.flush({
       items: [
         {
