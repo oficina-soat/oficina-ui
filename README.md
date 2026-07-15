@@ -15,6 +15,8 @@ npm install
 npm start
 ```
 
+Para apontar o desenvolvimento local ao `lab`, crie `proxy.conf.local.json` a partir do endpoint atual do API Gateway e execute `npm run start:lab`. O arquivo é local e não entra no Git nem no build de produção.
+
 A configuração de execução fica em `public/config/runtime-config.json` e pode ser substituída no deploy sem recompilar a aplicação.
 
 Antes de cada commit, execute:

@@ -16,8 +16,7 @@ const isRuntimeConfig = (value: unknown): value is RuntimeConfig => {
   return (
     typeof candidate['apiBaseUrl'] === 'string' &&
     candidate['apiBaseUrl'].length > 0 &&
-    typeof candidate['authBaseUrl'] === 'string' &&
-    candidate['authBaseUrl'].length > 0
+    typeof candidate['authBaseUrl'] === 'string'
   );
 };
 

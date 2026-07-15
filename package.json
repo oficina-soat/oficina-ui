@@ -4,6 +4,7 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
+    "start:lab": "ng serve --proxy-config proxy.conf.local.json",
     "build": "ng build --configuration production",
     "api:sync": "node scripts/sync-openapi-contracts.mjs",
     "api:generate": "node scripts/generate-openapi-clients.mjs",
