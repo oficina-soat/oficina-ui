@@ -14,4 +14,5 @@ export {
   type ClientFailureReason,
   type VehicleFailureReason,
   type WorkOrderFailureReason,
+  type WorkOrderSummary,
 } from './application';
