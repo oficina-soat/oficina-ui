@@ -24,4 +24,15 @@ describe('SessionStore', () => {
     store.clear();
     expect(store.session()).toBeNull();
   });
+
+  it('expõe os papéis decodificados somente para navegação visual', () => {
+    const payload = btoa(JSON.stringify({ groups: ['administrativo', 'recepcionista'] }));
+    const store = TestBed.inject(SessionStore);
+    store.start(`header.${payload}.signature`, 3600);
+
+    expect(store.identity()).toEqual({ roles: ['administrativo', 'recepcionista'] });
+    expect(store.hasAnyRole(['administrativo'])).toBe(true);
+    expect(store.hasAnyRole(['mecanico'])).toBe(false);
+    store.clear();
+  });
 });

@@ -1,5 +1,6 @@
 // Páginas e componentes de autenticação.
 export {};
+export { AccessDenied } from './access-denied/access-denied';
 export { ActivationRequest } from './activation-request/activation-request';
 export { CredentialActivation } from './credential-activation/credential-activation';
 export { Login } from './login/login';

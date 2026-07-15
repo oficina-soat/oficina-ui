@@ -34,6 +34,8 @@ const total = itens.reduce((soma, item) => soma + item.valor * item.quantidade, 
 
 A UI deve apresentar ações fornecidas ou aceitas pela API e tratar a eventual rejeição canônica. Ocultar uma ação por papel ou estado recebido é somente melhoria de experiência; nunca é controle de segurança.
 
+Os guards de rota leem apenas os papéis conhecidos do claim `groups` para evitar navegação acidental a áreas incompatíveis. Essa leitura local não valida a assinatura do JWT e não concede autorização: requisições continuam sendo enviadas com o token, e API Gateway/APIs validam assinatura, expiração e papel em cada operação protegida.
+
 ## Guardrails automatizados
 
 - ESLint com zero warnings e proibição de `any`/imports restritos;

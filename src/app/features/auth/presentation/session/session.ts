@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 
 import { SessionStore } from '../../../../core/auth/session.store';
@@ -15,6 +15,9 @@ import { LOGOUT_USER } from '../../public-api';
 })
 export class Session {
   protected readonly session = inject(SessionStore);
+  protected readonly roleLabels = computed(() =>
+    (this.session.identity()?.roles ?? []).map((role) => roleLabels[role]),
+  );
   private readonly logoutUser = inject(LOGOUT_USER);
   private readonly router = inject(Router);
 
@@ -23,3 +26,9 @@ export class Session {
     await this.router.navigateByUrl('/login');
   }
 }
+
+const roleLabels = {
+  administrativo: 'Administrativo',
+  mecanico: 'Mecânico',
+  recepcionista: 'Recepcionista',
+} as const;
