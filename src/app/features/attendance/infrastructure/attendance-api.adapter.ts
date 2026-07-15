@@ -22,12 +22,18 @@ import {
   WorkOrderOperationError,
   type WorkOrderFailureReason,
   type WorkOrderSummary,
+  type WorkOrderHistoryEntry,
+  type ChangeWorkOrderStateCommand,
+  type CancelWorkOrderCommand,
+  type AsyncOperation,
 } from '../application';
 import type {
   Cliente,
   ConsultarClientesResponse,
   ConsultarOrdensServicoResponse,
   OrdemServico,
+  HistoricoOrdemServico,
+  OperacaoAssincrona,
   Veiculo,
 } from './generated/types.gen';
 
@@ -56,6 +62,12 @@ const mapWorkOrder = (order: OrdemServico): WorkOrderSummary => ({
   state: order.estado,
   createdAt: order.criadoEm,
   updatedAt: order.atualizadoEm,
+});
+
+const mapHistory = (entry: HistoricoOrdemServico): WorkOrderHistoryEntry => ({
+  state: entry.estado,
+  occurredAt: entry.dataDoEstado,
+  ...(entry.motivo === undefined ? {} : { reason: entry.motivo }),
 });
 
 @Injectable({ providedIn: 'root' })
@@ -194,6 +206,52 @@ export class AttendanceApiAdapter implements AttendanceGateway {
         ),
       );
       return mapWorkOrder(data);
+    } catch (error: unknown) {
+      throw this.workOrderError(error);
+    }
+  }
+
+  async consultarHistoricoOrdemServico(id: string): Promise<readonly WorkOrderHistoryEntry[]> {
+    try {
+      const data = await firstValueFrom(
+        this.http.get<HistoricoOrdemServico[]>(
+          `${this.config.apiBaseUrl}/ordens-servico/${encodeURIComponent(id)}/historico`,
+        ),
+      );
+      return data.map(mapHistory);
+    } catch (error: unknown) {
+      throw this.workOrderError(error);
+    }
+  }
+
+  async alterarEstadoOrdemServico(command: ChangeWorkOrderStateCommand): Promise<WorkOrderSummary> {
+    try {
+      const data = await firstValueFrom(
+        this.http.patch<OrdemServico>(
+          `${this.config.apiBaseUrl}/ordens-servico/${encodeURIComponent(command.id)}/estado`,
+          {
+            estado: command.state,
+            ...(command.reason === undefined ? {} : { motivo: command.reason }),
+          },
+          { context: idempotentCommandContext(command.idempotencyKey) },
+        ),
+      );
+      return mapWorkOrder(data);
+    } catch (error: unknown) {
+      throw this.workOrderError(error);
+    }
+  }
+
+  async cancelarOrdemServico(command: CancelWorkOrderCommand): Promise<AsyncOperation> {
+    try {
+      const data = await firstValueFrom(
+        this.http.post<OperacaoAssincrona>(
+          `${this.config.apiBaseUrl}/ordens-servico/${encodeURIComponent(command.id)}/cancelamento`,
+          command.reason === undefined ? {} : { motivo: command.reason },
+          { context: idempotentCommandContext(command.idempotencyKey) },
+        ),
+      );
+      return { status: data.status, requestedAt: data.solicitadoEm };
     } catch (error: unknown) {
       throw this.workOrderError(error);
     }

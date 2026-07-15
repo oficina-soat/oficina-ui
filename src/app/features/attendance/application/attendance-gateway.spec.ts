@@ -41,6 +41,20 @@ const gateway = (): AttendanceGateway => ({
     createdAt: '2026-07-15T12:00:00Z',
     updatedAt: '2026-07-15T12:00:00Z',
   }),
+  consultarHistoricoOrdemServico: vi.fn().mockResolvedValue([]),
+  alterarEstadoOrdemServico: vi.fn().mockResolvedValue({
+    id: 'os-1',
+    clienteId: 'cliente-1',
+    veiculoId: 'veiculo-1',
+    problemDescription: 'Não liga',
+    state: 'EM_DIAGNOSTICO',
+    createdAt: '2026-07-15T12:00:00Z',
+    updatedAt: '2026-07-15T13:00:00Z',
+  }),
+  cancelarOrdemServico: vi.fn().mockResolvedValue({
+    status: 'ACEITO',
+    requestedAt: '2026-07-15T13:00:00Z',
+  }),
   abrirOrdemServico: vi.fn().mockResolvedValue({
     id: 'os-1',
     clienteId: 'cliente-1',

@@ -2,7 +2,14 @@ import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
 import { describe, expect, it, vi } from 'vitest';
 
-import { GET_WORK_ORDER, LIST_WORK_ORDERS, OPEN_WORK_ORDER } from '../../attendance.providers';
+import {
+  CANCEL_WORK_ORDER,
+  CHANGE_WORK_ORDER_STATE,
+  GET_WORK_ORDER,
+  GET_WORK_ORDER_HISTORY,
+  LIST_WORK_ORDERS,
+  OPEN_WORK_ORDER,
+} from '../../attendance.providers';
 import { NewWorkOrder } from './new-work-order';
 import { WorkOrderDetail } from './work-order-detail';
 import { WorkOrders } from './work-orders';
@@ -109,8 +116,15 @@ describe('WorkOrders', () => {
     expect(navigate).toHaveBeenCalledWith(['/ordens-servico', 'ordem-1']);
   });
 
-  it('consulta a OS por identificador sem carregar histórico antecipadamente', async () => {
+  it('consulta a OS por identificador com histórico e ações delegadas à API', async () => {
     const get = { execute: vi.fn().mockResolvedValue(order) };
+    const getHistory = {
+      execute: vi
+        .fn()
+        .mockResolvedValue([
+          { state: 'RECEBIDA', occurredAt: '2026-07-15T12:00:00Z', reason: 'OS aberta' },
+        ]),
+    };
     const route = {
       snapshot: { paramMap: convertToParamMap({ ordemServicoId: 'ordem-1' }) },
     };
@@ -119,16 +133,22 @@ describe('WorkOrders', () => {
       providers: [
         provideRouter([]),
         { provide: GET_WORK_ORDER, useValue: get },
+        { provide: GET_WORK_ORDER_HISTORY, useValue: getHistory },
+        { provide: CHANGE_WORK_ORDER_STATE, useValue: { execute: vi.fn() } },
+        { provide: CANCEL_WORK_ORDER, useValue: { execute: vi.fn() } },
         { provide: ActivatedRoute, useValue: route },
       ],
     }).compileComponents();
     const fixture = TestBed.createComponent(WorkOrderDetail);
     fixture.detectChanges();
-    await fixture.whenStable();
-    fixture.detectChanges();
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(fixture.nativeElement.textContent).toContain('Veículo não liga');
+    });
 
     expect(get.execute).toHaveBeenCalledWith('ordem-1');
-    expect(fixture.nativeElement.textContent).toContain('Veículo não liga');
-    expect(fixture.nativeElement.textContent).toContain('Histórico e ações');
+    expect(getHistory.execute).toHaveBeenCalledWith('ordem-1');
+    expect(fixture.nativeElement.textContent).toContain('OS aberta');
+    expect(fixture.nativeElement.textContent).toContain('Ações da OS');
   });
 });

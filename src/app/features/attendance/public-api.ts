@@ -6,6 +6,9 @@ export {
   GET_WORK_ORDER,
   LIST_WORK_ORDERS,
   OPEN_WORK_ORDER,
+  GET_WORK_ORDER_HISTORY,
+  CHANGE_WORK_ORDER_STATE,
+  CANCEL_WORK_ORDER,
 } from './attendance.providers';
 export {
   ClientOperationError,
@@ -15,4 +18,5 @@ export {
   type VehicleFailureReason,
   type WorkOrderFailureReason,
   type WorkOrderSummary,
+  type WorkOrderHistoryEntry,
 } from './application';

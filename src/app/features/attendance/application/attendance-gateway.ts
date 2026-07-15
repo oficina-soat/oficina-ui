@@ -96,6 +96,30 @@ export interface WorkOrderSummary {
   readonly updatedAt: string;
 }
 
+export interface WorkOrderHistoryEntry {
+  readonly state: WorkOrderState;
+  readonly occurredAt: string;
+  readonly reason?: string;
+}
+
+export interface ChangeWorkOrderStateCommand {
+  readonly id: string;
+  readonly state: WorkOrderState;
+  readonly reason?: string;
+  readonly idempotencyKey: string;
+}
+
+export interface CancelWorkOrderCommand {
+  readonly id: string;
+  readonly reason?: string;
+  readonly idempotencyKey: string;
+}
+
+export interface AsyncOperation {
+  readonly status: string;
+  readonly requestedAt: string;
+}
+
 export interface ListWorkOrdersQuery {
   readonly page?: number;
   readonly size?: number;
@@ -135,6 +159,9 @@ export interface AttendanceGateway {
   criarVeiculo(command: CriarVeiculoCommand): Promise<VeiculoResumo>;
   listarOrdensServico(query?: ListWorkOrdersQuery): Promise<Pagina<WorkOrderSummary>>;
   consultarOrdemServico(id: string): Promise<WorkOrderSummary>;
+  consultarHistoricoOrdemServico(id: string): Promise<readonly WorkOrderHistoryEntry[]>;
+  alterarEstadoOrdemServico(command: ChangeWorkOrderStateCommand): Promise<WorkOrderSummary>;
+  cancelarOrdemServico(command: CancelWorkOrderCommand): Promise<AsyncOperation>;
   abrirOrdemServico(command: OpenWorkOrderCommand): Promise<WorkOrderSummary>;
 }
 
@@ -190,6 +217,27 @@ export class GetWorkOrder {
   constructor(private readonly gateway: AttendanceGateway) {}
   execute(id: string): Promise<WorkOrderSummary> {
     return this.gateway.consultarOrdemServico(id);
+  }
+}
+
+export class GetWorkOrderHistory {
+  constructor(private readonly gateway: AttendanceGateway) {}
+  execute(id: string): Promise<readonly WorkOrderHistoryEntry[]> {
+    return this.gateway.consultarHistoricoOrdemServico(id);
+  }
+}
+
+export class ChangeWorkOrderState {
+  constructor(private readonly gateway: AttendanceGateway) {}
+  execute(command: ChangeWorkOrderStateCommand): Promise<WorkOrderSummary> {
+    return this.gateway.alterarEstadoOrdemServico(command);
+  }
+}
+
+export class CancelWorkOrder {
+  constructor(private readonly gateway: AttendanceGateway) {}
+  execute(command: CancelWorkOrderCommand): Promise<AsyncOperation> {
+    return this.gateway.cancelarOrdemServico(command);
   }
 }
 

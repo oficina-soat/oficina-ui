@@ -219,4 +219,59 @@ describe('AttendanceApiAdapter', () => {
     });
     await expect(getResult).resolves.toMatchObject({ id: 'os-1', problemDescription: 'Não liga' });
   });
+
+  it('consulta histórico e envia ações da OS com idempotência', async () => {
+    const historyResult = adapter.consultarHistoricoOrdemServico('os/1');
+    httpTesting.expectOne('https://api.example/api/v1/ordens-servico/os%2F1/historico').flush([
+      {
+        estado: 'RECEBIDA',
+        dataDoEstado: '2026-07-15T12:00:00Z',
+        motivo: 'OS aberta',
+      },
+    ]);
+    await expect(historyResult).resolves.toEqual([
+      { state: 'RECEBIDA', occurredAt: '2026-07-15T12:00:00Z', reason: 'OS aberta' },
+    ]);
+
+    const stateResult = adapter.alterarEstadoOrdemServico({
+      id: 'os/1',
+      state: 'EM_DIAGNOSTICO',
+      reason: 'Diagnóstico iniciado',
+      idempotencyKey: 'state-key-123',
+    });
+    const stateRequest = httpTesting.expectOne(
+      'https://api.example/api/v1/ordens-servico/os%2F1/estado',
+    );
+    expect(stateRequest.request.method).toBe('PATCH');
+    expect(stateRequest.request.headers.get('X-Idempotency-Key')).toBe('state-key-123');
+    expect(stateRequest.request.body).toEqual({
+      estado: 'EM_DIAGNOSTICO',
+      motivo: 'Diagnóstico iniciado',
+    });
+    stateRequest.flush({
+      ordemServicoId: 'os-1',
+      clienteId: 'cliente-1',
+      veiculoId: 'veiculo-1',
+      descricaoProblema: 'Não liga',
+      estado: 'EM_DIAGNOSTICO',
+      criadoEm: '2026-07-15T12:00:00Z',
+      atualizadoEm: '2026-07-15T13:00:00Z',
+    });
+    await expect(stateResult).resolves.toMatchObject({ state: 'EM_DIAGNOSTICO' });
+
+    const cancelResult = adapter.cancelarOrdemServico({
+      id: 'os/1',
+      idempotencyKey: 'cancel-key-123',
+    });
+    const cancelRequest = httpTesting.expectOne(
+      'https://api.example/api/v1/ordens-servico/os%2F1/cancelamento',
+    );
+    expect(cancelRequest.request.method).toBe('POST');
+    expect(cancelRequest.request.headers.get('X-Idempotency-Key')).toBe('cancel-key-123');
+    cancelRequest.flush({ status: 'ACEITO', solicitadoEm: '2026-07-15T13:00:00Z' });
+    await expect(cancelResult).resolves.toEqual({
+      status: 'ACEITO',
+      requestedAt: '2026-07-15T13:00:00Z',
+    });
+  });
 });

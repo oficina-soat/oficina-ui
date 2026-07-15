@@ -4,6 +4,9 @@ import {
   CreateClient,
   CreateVehicle,
   GetWorkOrder,
+  GetWorkOrderHistory,
+  ChangeWorkOrderState,
+  CancelWorkOrder,
   ListClients,
   ListWorkOrders,
   LoadClientVehicles,
@@ -42,4 +45,16 @@ export const GET_WORK_ORDER = new InjectionToken<GetWorkOrder>('GET_WORK_ORDER',
 export const OPEN_WORK_ORDER = new InjectionToken<OpenWorkOrder>('OPEN_WORK_ORDER', {
   providedIn: 'root',
   factory: () => new OpenWorkOrder(inject(AttendanceApiAdapter)),
+});
+export const GET_WORK_ORDER_HISTORY = new InjectionToken<GetWorkOrderHistory>(
+  'GET_WORK_ORDER_HISTORY',
+  { providedIn: 'root', factory: () => new GetWorkOrderHistory(inject(AttendanceApiAdapter)) },
+);
+export const CHANGE_WORK_ORDER_STATE = new InjectionToken<ChangeWorkOrderState>(
+  'CHANGE_WORK_ORDER_STATE',
+  { providedIn: 'root', factory: () => new ChangeWorkOrderState(inject(AttendanceApiAdapter)) },
+);
+export const CANCEL_WORK_ORDER = new InjectionToken<CancelWorkOrder>('CANCEL_WORK_ORDER', {
+  providedIn: 'root',
+  factory: () => new CancelWorkOrder(inject(AttendanceApiAdapter)),
 });
