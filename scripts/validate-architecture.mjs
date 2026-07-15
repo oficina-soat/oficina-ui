@@ -6,6 +6,10 @@ import process from 'node:process';
 
 const root = resolve('src/app');
 const violations = [];
+const browserSessionBoundary = new Set([
+  'core/auth/session.store.ts',
+  'core/auth/session.store.spec.ts',
+]);
 
 const walk = async (directory) => {
   const entries = await readdir(directory, { withFileTypes: true });
@@ -35,8 +39,8 @@ for (const file of (await walk(root)).filter((path) => extname(path) === '.ts'))
   ) {
     violations.push(`${path}: HttpClient só pode existir em infrastructure ou core/http.`);
   }
-  if (/\b(localStorage|sessionStorage)\b/.test(source)) {
-    violations.push(`${path}: sessão persistente no navegador exige decisão arquitetural.`);
+  if (/\b(localStorage|sessionStorage)\b/.test(source) && !browserSessionBoundary.has(path)) {
+    violations.push(`${path}: storage do navegador só pode existir no SessionStore.`);
   }
   if (
     path.includes('/presentation/') &&

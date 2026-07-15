@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, NavigationEnd, Router, RouterOutlet } from '@angular/router';
+import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { filter, map, startWith } from 'rxjs';
 
 import { SessionStore } from '../core/auth/session.store';
@@ -49,7 +49,6 @@ export class OperationalShell {
   private readonly session = inject(SessionStore);
   private readonly logoutUser = inject(LOGOUT_USER);
   private readonly router = inject(Router);
-  private readonly route = inject(ActivatedRoute);
 
   protected readonly userLabel = computed(() => {
     const identity = this.session.identity();
@@ -88,9 +87,9 @@ export class OperationalShell {
 
   private readBreadcrumb(): readonly string[] {
     const labels = ['Início'];
-    let current: ActivatedRoute | null = this.route.firstChild;
+    let current = this.router.routerState.snapshot.root.firstChild;
     while (current) {
-      const label = current.snapshot.data['breadcrumb'];
+      const label = current.data['breadcrumb'];
       if (typeof label === 'string' && label !== 'Início') labels.push(label);
       current = current.firstChild;
     }
