@@ -54,6 +54,8 @@ describe('ExecutionDetail', () => {
       fixture.detectChanges();
       expect(fixture.nativeElement.textContent).toContain('Criada');
     });
+    expect(fixture.nativeElement.textContent).not.toContain('Concluir diagnóstico');
+    expect(fixture.nativeElement.textContent).not.toContain('Reparo');
 
     const button = [...fixture.nativeElement.querySelectorAll('button')].find(
       (item: HTMLButtonElement) => item.textContent?.includes('Iniciar diagnóstico'),
@@ -66,10 +68,10 @@ describe('ExecutionDetail', () => {
     );
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('Em diagnóstico');
-    expect(button.hidden).toBe(true);
+    expect(fixture.nativeElement.textContent).not.toContain('Iniciar diagnóstico');
     const completeButton = [...fixture.nativeElement.querySelectorAll('button')].find(
       (item: HTMLButtonElement) => item.textContent?.includes('Concluir diagnóstico'),
     ) as HTMLButtonElement;
-    expect(completeButton.hidden).toBe(false);
+    expect(completeButton).toBeTruthy();
   });
 });

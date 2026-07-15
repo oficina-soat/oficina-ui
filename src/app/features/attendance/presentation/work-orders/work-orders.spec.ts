@@ -155,8 +155,6 @@ describe('WorkOrders', () => {
       (option: HTMLOptionElement) => option.value,
     );
     expect(states).toEqual(['', 'EM_DIAGNOSTICO']);
-    expect((fixture.nativeElement.querySelector('.cancel-action') as HTMLElement).hidden).toBe(
-      false,
-    );
+    expect(fixture.nativeElement.querySelector('.cancel-action')).toBeTruthy();
   });
 });

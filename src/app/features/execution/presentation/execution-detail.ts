@@ -102,72 +102,94 @@ interface ExecutionAction {
           }
         </dl>
 
-        <section class="actions" aria-labelledby="actions-title">
-          <h2 id="actions-title">Ações operacionais</h2>
-          <p>A API valida cada comando conforme o estado atual.</p>
-          <div class="action-group">
-            <h3>Diagnóstico</h3>
-            <button
-              [hidden]="!item.allowedActions.includes('INICIAR_DIAGNOSTICO')"
-              class="ui-button ui-button--secondary"
-              type="button"
-              [disabled]="saving()"
-              (click)="run(startDiagnosis, 'Diagnóstico iniciado.')"
-            >
-              Iniciar diagnóstico
-            </button>
-            <app-form-field inputId="diagnosis-notes" label="Diagnóstico encontrado">
-              <textarea id="diagnosis-notes" rows="4" [formControl]="diagnosisNotes"></textarea>
-            </app-form-field>
-            <button
-              [hidden]="!item.allowedActions.includes('CONCLUIR_DIAGNOSTICO')"
-              class="ui-button ui-button--primary"
-              type="button"
-              [disabled]="saving()"
-              (click)="run(completeDiagnosis, 'Diagnóstico concluído.', diagnosisNotes.value)"
-            >
-              Concluir diagnóstico
-            </button>
-          </div>
-          <div class="action-group">
-            <h3>Reparo</h3>
-            <button
-              [hidden]="!item.allowedActions.includes('INICIAR_REPARO')"
-              class="ui-button ui-button--secondary"
-              type="button"
-              [disabled]="saving()"
-              (click)="run(startRepair, 'Reparo iniciado.')"
-            >
-              Iniciar reparo
-            </button>
-            <app-form-field inputId="repair-notes" label="Observações do reparo">
-              <textarea id="repair-notes" rows="4" [formControl]="repairNotes"></textarea>
-            </app-form-field>
-            <button
-              [hidden]="!item.allowedActions.includes('CONCLUIR_REPARO')"
-              class="ui-button ui-button--primary"
-              type="button"
-              [disabled]="saving()"
-              (click)="run(completeRepair, 'Reparo concluído.', repairNotes.value)"
-            >
-              Concluir reparo
-            </button>
-          </div>
-          <div class="action-group" [hidden]="!item.allowedActions.includes('CANCELAR')">
-            <h3>Cancelamento</h3>
-            <app-form-field inputId="cancel-reason" label="Motivo do cancelamento">
-              <textarea id="cancel-reason" rows="3" [formControl]="cancelReason"></textarea>
-            </app-form-field>
-            <button
-              class="ui-button ui-button--danger"
-              type="button"
-              [disabled]="saving()"
-              (click)="run(cancelExecution, 'Execução cancelada.', cancelReason.value)"
-            >
-              Cancelar execução
-            </button>
-          </div>
-        </section>
+        @if (item.allowedActions.length > 0) {
+          <section class="actions" aria-labelledby="actions-title">
+            <h2 id="actions-title">Ações operacionais</h2>
+            <p>A API valida cada comando conforme o estado atual.</p>
+            @if (
+              item.allowedActions.includes('INICIAR_DIAGNOSTICO') ||
+              item.allowedActions.includes('CONCLUIR_DIAGNOSTICO')
+            ) {
+              <div class="action-group">
+                <h3>Diagnóstico</h3>
+                @if (item.allowedActions.includes('INICIAR_DIAGNOSTICO')) {
+                  <button
+                    class="ui-button ui-button--secondary"
+                    type="button"
+                    [disabled]="saving()"
+                    (click)="run(startDiagnosis, 'Diagnóstico iniciado.')"
+                  >
+                    Iniciar diagnóstico
+                  </button>
+                }
+                @if (item.allowedActions.includes('CONCLUIR_DIAGNOSTICO')) {
+                  <app-form-field inputId="diagnosis-notes" label="Diagnóstico encontrado">
+                    <textarea
+                      id="diagnosis-notes"
+                      rows="4"
+                      [formControl]="diagnosisNotes"
+                    ></textarea>
+                  </app-form-field>
+                  <button
+                    class="ui-button ui-button--primary"
+                    type="button"
+                    [disabled]="saving()"
+                    (click)="run(completeDiagnosis, 'Diagnóstico concluído.', diagnosisNotes.value)"
+                  >
+                    Concluir diagnóstico
+                  </button>
+                }
+              </div>
+            }
+            @if (
+              item.allowedActions.includes('INICIAR_REPARO') ||
+              item.allowedActions.includes('CONCLUIR_REPARO')
+            ) {
+              <div class="action-group">
+                <h3>Reparo</h3>
+                @if (item.allowedActions.includes('INICIAR_REPARO')) {
+                  <button
+                    class="ui-button ui-button--secondary"
+                    type="button"
+                    [disabled]="saving()"
+                    (click)="run(startRepair, 'Reparo iniciado.')"
+                  >
+                    Iniciar reparo
+                  </button>
+                }
+                @if (item.allowedActions.includes('CONCLUIR_REPARO')) {
+                  <app-form-field inputId="repair-notes" label="Observações do reparo">
+                    <textarea id="repair-notes" rows="4" [formControl]="repairNotes"></textarea>
+                  </app-form-field>
+                  <button
+                    class="ui-button ui-button--primary"
+                    type="button"
+                    [disabled]="saving()"
+                    (click)="run(completeRepair, 'Reparo concluído.', repairNotes.value)"
+                  >
+                    Concluir reparo
+                  </button>
+                }
+              </div>
+            }
+            @if (item.allowedActions.includes('CANCELAR')) {
+              <div class="action-group">
+                <h3>Cancelamento</h3>
+                <app-form-field inputId="cancel-reason" label="Motivo do cancelamento">
+                  <textarea id="cancel-reason" rows="3" [formControl]="cancelReason"></textarea>
+                </app-form-field>
+                <button
+                  class="ui-button ui-button--danger"
+                  type="button"
+                  [disabled]="saving()"
+                  (click)="run(cancelExecution, 'Execução cancelada.', cancelReason.value)"
+                >
+                  Cancelar execução
+                </button>
+              </div>
+            }
+          </section>
+        }
       }
     </section>
   `,

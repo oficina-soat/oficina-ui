@@ -100,53 +100,57 @@ const commandMessages = {
           }
         </section>
 
-        <section class="actions" aria-labelledby="actions-title">
-          <h2 id="actions-title">Ações da OS</h2>
-          <p>A API valida se a ação é permitida para o estado atual.</p>
-          @if (hasStateActions()) {
-            <form [formGroup]="stateForm" (ngSubmit)="changeState()" novalidate>
-              <app-form-field
-                inputId="next-state"
-                label="Novo estado"
-                [required]="true"
-                [error]="
-                  stateForm.controls.state.touched && stateForm.controls.state.invalid
-                    ? 'Selecione um estado.'
-                    : undefined
-                "
-              >
-                <select id="next-state" formControlName="state">
-                  <option value="">Selecione</option>
-                  @for (state of states; track state[0]) {
-                    @if (stateAllowed(state[0])) {
-                      <option [value]="state[0]">{{ state[1] }}</option>
+        @if (item.allowedActions.length > 0) {
+          <section class="actions" aria-labelledby="actions-title">
+            <h2 id="actions-title">Ações da OS</h2>
+            <p>A API valida se a ação é permitida para o estado atual.</p>
+            @if (hasStateActions()) {
+              <form [formGroup]="stateForm" (ngSubmit)="changeState()" novalidate>
+                <app-form-field
+                  inputId="next-state"
+                  label="Novo estado"
+                  [required]="true"
+                  [error]="
+                    stateForm.controls.state.touched && stateForm.controls.state.invalid
+                      ? 'Selecione um estado.'
+                      : undefined
+                  "
+                >
+                  <select id="next-state" formControlName="state">
+                    <option value="">Selecione</option>
+                    @for (state of states; track state[0]) {
+                      @if (stateAllowed(state[0])) {
+                        <option [value]="state[0]">{{ state[1] }}</option>
+                      }
                     }
-                  }
-                </select>
-              </app-form-field>
-              <app-form-field inputId="state-reason" label="Motivo">
-                <input id="state-reason" formControlName="reason" />
-              </app-form-field>
-              <button class="ui-button ui-button--primary" type="submit" [disabled]="saving()">
-                Alterar estado
-              </button>
-            </form>
-          }
+                  </select>
+                </app-form-field>
+                <app-form-field inputId="state-reason" label="Motivo">
+                  <input id="state-reason" formControlName="reason" />
+                </app-form-field>
+                <button class="ui-button ui-button--primary" type="submit" [disabled]="saving()">
+                  Alterar estado
+                </button>
+              </form>
+            }
 
-          <div class="cancel-action" [hidden]="!item.allowedActions.includes('CANCELAR')">
-            <app-form-field inputId="cancel-reason" label="Motivo do cancelamento">
-              <input id="cancel-reason" [formControl]="cancelReason" />
-            </app-form-field>
-            <button
-              class="ui-button ui-button--danger"
-              type="button"
-              [disabled]="saving()"
-              (click)="confirmingCancel.set(true)"
-            >
-              Solicitar cancelamento
-            </button>
-          </div>
-        </section>
+            @if (item.allowedActions.includes('CANCELAR')) {
+              <div class="cancel-action">
+                <app-form-field inputId="cancel-reason" label="Motivo do cancelamento">
+                  <input id="cancel-reason" [formControl]="cancelReason" />
+                </app-form-field>
+                <button
+                  class="ui-button ui-button--danger"
+                  type="button"
+                  [disabled]="saving()"
+                  (click)="confirmingCancel.set(true)"
+                >
+                  Solicitar cancelamento
+                </button>
+              </div>
+            }
+          </section>
+        }
       }
     </section>
     <app-confirmation
