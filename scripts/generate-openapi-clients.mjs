@@ -9,6 +9,7 @@ const contracts = [
   ['oficina-auth-lambda.yaml', 'src/app/features/auth/infrastructure/generated'],
   ['oficina-os-service.yaml', 'src/app/features/attendance/infrastructure/generated'],
   ['oficina-execution-service.yaml', 'src/app/features/execution/infrastructure/generated'],
+  ['oficina-billing-service.yaml', 'src/app/features/billing/infrastructure/generated'],
 ];
 const executable = resolve('node_modules/@hey-api/openapi-ts/bin/run.js');
 

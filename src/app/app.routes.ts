@@ -67,6 +67,14 @@ export const routes: Routes = [
         data: { breadcrumb: 'Consultar ordem de serviço' },
       },
       {
+        path: 'faturamento',
+        canActivate: [roleGuard],
+        data: { roles: ['administrativo', 'recepcionista'], breadcrumb: 'Faturamento' },
+        loadComponent: () =>
+          import('./features/billing/presentation').then(({ Billing }) => Billing),
+        title: 'Orçamento e pagamento | Oficina SOAT',
+      },
+      {
         path: 'estoque',
         canActivate: [roleGuard],
         data: { roles: ['administrativo', 'mecanico'], breadcrumb: 'Estoque' },

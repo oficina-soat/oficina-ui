@@ -13,6 +13,7 @@ const contracts = [
   'oficina-auth-lambda.yaml',
   'oficina-os-service.yaml',
   'oficina-execution-service.yaml',
+  'oficina-billing-service.yaml',
 ];
 
 await mkdir(targetDirectory, { recursive: true });

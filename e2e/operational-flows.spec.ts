@@ -145,6 +145,69 @@ const mockApi = async (page: Page, options: ApiOptions = {}): Promise<void> => {
       });
       return;
     }
+    if (url.pathname === '/api/v1/ordens-servico/ordem-1/orcamentos') {
+      await route.fulfill({
+        json: [
+          {
+            orcamentoId: 'orcamento-1',
+            ordemServicoId: 'ordem-1',
+            itens: [
+              {
+                tipo: 'SERVICO',
+                itemId: 'item-1',
+                nome: 'Troca de óleo',
+                quantidade: 1,
+                valorUnitario: 150,
+                valorTotal: 150,
+              },
+            ],
+            valorTotal: 150,
+            status: 'GERADO',
+            criadoEm: '2026-01-01T00:00:00Z',
+            atualizadoEm: '2026-01-01T00:00:00Z',
+            acoesPermitidas: ['APROVAR'],
+          },
+        ],
+      });
+      return;
+    }
+    if (url.pathname === '/api/v1/ordens-servico/ordem-1') {
+      await route.fulfill({ json: { ordemServicoId: 'ordem-1', estado: 'AGUARDANDO_APROVACAO' } });
+      return;
+    }
+    if (url.pathname === '/api/v1/ordens-servico/ordem-1/pagamentos') {
+      await route.fulfill({
+        json: [
+          {
+            pagamentoId: 'pagamento-1',
+            ordemServicoId: 'ordem-1',
+            orcamentoId: 'orcamento-1',
+            valor: 150,
+            metodo: 'PIX',
+            status: 'CRIADO',
+            criadoEm: '2026-01-01T00:00:00Z',
+            atualizadoEm: '2026-01-01T00:00:00Z',
+            acoesPermitidas: ['CONFIRMAR'],
+          },
+        ],
+      });
+      return;
+    }
+    if (url.pathname === '/api/v1/orcamentos/orcamento-1/aprovacao') {
+      await route.fulfill({
+        json: {
+          orcamentoId: 'orcamento-1',
+          ordemServicoId: 'ordem-1',
+          itens: [],
+          valorTotal: 150,
+          status: 'APROVADO',
+          criadoEm: '2026-01-01T00:00:00Z',
+          atualizadoEm: '2026-01-01T01:00:00Z',
+          acoesPermitidas: [],
+        },
+      });
+      return;
+    }
     await route.continue();
   });
 };
@@ -239,6 +302,23 @@ test('fila executa comando idempotente e apresenta estado aceito', async ({ page
   await expect(page.getByText('Diagnóstico iniciado.')).toBeVisible();
   await expect(page.getByText('Em diagnóstico', { exact: true })).toBeVisible();
   expect(idempotencyKey).toMatch(/^[0-9a-f-]{36}$/);
+});
+
+test('faturamento consulta, aprova e acompanha pagamento pelas respostas canônicas', async ({
+  page,
+}) => {
+  await mockApi(page, { roles: ['administrativo'] });
+  await login(page);
+  await page.getByRole('link', { name: 'Faturamento' }).click();
+  await page.getByLabel('Identificador da ordem de serviço').fill('ordem-1');
+  await page.getByRole('button', { name: 'Consultar' }).click();
+  await expect(page.getByText('Troca de óleo')).toBeVisible();
+  await expect(page.getByText('CRIADO')).toBeVisible();
+  await expect(page.getByText('AGUARDANDO_APROVACAO')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Recusar orçamento' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Aprovar orçamento' }).click();
+  await expect(page.getByText('Orçamento aprovado.')).toBeVisible();
+  await expectNoAccessibilityViolations(page);
 });
 
 test('sessão expirada redireciona ao login após recarga', async ({ page }) => {
