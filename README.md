@@ -4,7 +4,7 @@ Interface operacional Angular da Oficina SOAT para recepção, administração e
 
 ## Estado
 
-A fundação Angular e os guardrails arquiteturais estão ativos. O próximo incremento previsto é a integração tipada com os contratos OpenAPI dos backends.
+O MVP operacional está implementado e publicado no `lab`: autenticação, consulta e condução de ordens de serviço, catálogo, estoque, orçamento e pagamento usam clientes tipados gerados dos contratos OpenAPI. Evoluções futuras e pendências de homologação ficam no [roadmap normativo](https://github.com/oficina-soat/oficina-platform/blob/main/docs/frontend/roadmap.md).
 
 ## Desenvolvimento local
 
