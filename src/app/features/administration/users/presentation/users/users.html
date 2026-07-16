@@ -1,0 +1,133 @@
+<section class="users-page" aria-labelledby="users-title">
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">Administração</p>
+      <h1 id="users-title">Usuários operacionais</h1>
+      <p>Consulte usuários, papéis e o acesso operacional mantido pelos serviços responsáveis.</p>
+    </div>
+  </header>
+
+  <section class="filters" aria-labelledby="users-filters-title">
+    <h2 id="users-filters-title">Pesquisar usuários</h2>
+    <form [formGroup]="filters" (ngSubmit)="applyFilters()" novalidate>
+      <app-form-field inputId="filter-user-name" label="Nome">
+        <input id="filter-user-name" formControlName="name" autocomplete="off" />
+      </app-form-field>
+      <app-form-field
+        inputId="filter-user-document"
+        label="CPF"
+        hint="Informe os 11 números para uma busca exata."
+        [error]="
+          filters.controls.document.touched && filters.controls.document.invalid
+            ? 'Informe um CPF com 11 números.'
+            : undefined
+        "
+      >
+        <input
+          id="filter-user-document"
+          formControlName="document"
+          inputmode="numeric"
+          maxlength="11"
+          autocomplete="off"
+        />
+      </app-form-field>
+      <app-form-field inputId="filter-user-status" label="Estado">
+        <select id="filter-user-status" formControlName="status">
+          <option value="">Todos</option>
+          <option value="ATIVO">Ativo</option>
+          <option value="BLOQUEADO">Bloqueado</option>
+          <option value="INATIVO">Inativo</option>
+        </select>
+      </app-form-field>
+      <app-form-field inputId="filter-user-role" label="Papel">
+        <select id="filter-user-role" formControlName="role">
+          <option value="">Todos</option>
+          <option value="administrativo">Administrativo</option>
+          <option value="mecanico">Mecânico</option>
+          <option value="recepcionista">Recepcionista</option>
+        </select>
+      </app-form-field>
+      <div class="form-actions">
+        <button class="ui-button ui-button--primary" type="submit" [disabled]="loading()">
+          Pesquisar
+        </button>
+        <button
+          class="ui-button ui-button--secondary"
+          type="button"
+          [disabled]="loading()"
+          (click)="clearFilters()"
+        >
+          Limpar
+        </button>
+      </div>
+    </form>
+  </section>
+
+  @if (failure()) {
+    <app-alert title="Não foi possível concluir" tone="danger">
+      <p>{{ failure() }}</p>
+      @if (correlationId()) {
+        <p>Referência: {{ correlationId() }}</p>
+      }
+    </app-alert>
+  }
+
+  @if (loading() && !page()) {
+    <app-loading label="Carregando usuários" />
+  } @else if (page(); as result) {
+    @if (loading()) {
+      <app-loading label="Atualizando usuários" />
+    }
+    @if (result.items.length === 0) {
+      <app-empty-state
+        title="Nenhum usuário encontrado"
+        description="Revise os filtros informados para consultar novamente."
+      />
+    } @else {
+      <app-data-table label="Usuários operacionais">
+        <table>
+          <caption>
+            {{
+              result.totalItems
+            }}
+            usuário(s) encontrado(s)
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Nome</th>
+              <th scope="col">CPF</th>
+              <th scope="col">Estado</th>
+              <th scope="col">Papéis</th>
+              <th scope="col">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (user of result.items; track user.id) {
+              <tr>
+                <td>{{ user.name }}</td>
+                <td>{{ maskDocument(user.document) }}</td>
+                <td>{{ statusLabels[user.status] }}</td>
+                <td>
+                  @for (role of user.roles; track role; let last = $last) {
+                    {{ roleLabels[role] }}{{ last ? '' : ', ' }}
+                  }
+                </td>
+                <td><a [routerLink]="['/administracao/usuarios', user.id]">Ver detalhes</a></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </app-data-table>
+      <app-pagination
+        [currentPage]="result.page + 1"
+        [totalPages]="result.totalPages"
+        label="Paginação de usuários"
+        (pageChange)="loadPage($event - 1)"
+      />
+    }
+  } @else if (failure()) {
+    <button class="ui-button ui-button--secondary" type="button" (click)="loadPage(0)">
+      Tentar novamente
+    </button>
+  }
+</section>

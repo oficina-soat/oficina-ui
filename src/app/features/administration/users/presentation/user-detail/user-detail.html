@@ -1,0 +1,132 @@
+<section class="user-detail" aria-labelledby="user-detail-title">
+  <a routerLink="/administracao/usuarios">← Voltar para usuários</a>
+  <header>
+    <p class="eyebrow">Administração</p>
+    <h1 id="user-detail-title">Detalhes do usuário</h1>
+  </header>
+  @if (failure()) {
+    <app-alert title="Não foi possível concluir" tone="danger"
+      ><p>{{ failure() }}</p>
+      @if (correlationId()) {
+        <p>Referência: {{ correlationId() }}</p>
+      }
+    </app-alert>
+  }
+  @if (success()) {
+    <app-alert title="Alteração concluída" tone="success"
+      ><p>{{ success() }}</p></app-alert
+    >
+  }
+  @if (loading() && !user()) {
+    <app-loading label="Carregando usuário" />
+  }
+  @if (user(); as current) {
+    <section class="panel" aria-labelledby="operational-title">
+      <div class="section-header">
+        <h2 id="operational-title">Cadastro operacional</h2>
+        @if (!editing() && current.allowedActions.includes('ATUALIZAR_DADOS')) {
+          <button class="ui-button ui-button--secondary" type="button" (click)="startEditing()">
+            Editar dados
+          </button>
+        }
+      </div>
+      @if (editing()) {
+        <form [formGroup]="form" (ngSubmit)="save()" novalidate>
+          <app-form-field
+            inputId="user-name"
+            label="Nome"
+            [required]="true"
+            [error]="
+              form.controls.name.touched && form.controls.name.invalid
+                ? 'Informe o nome.'
+                : undefined
+            "
+            ><input id="user-name" formControlName="name" autocomplete="name"
+          /></app-form-field>
+          <app-form-field
+            inputId="user-document"
+            label="CPF"
+            hint="Digite somente os 11 números."
+            [required]="true"
+            [error]="
+              form.controls.document.touched && form.controls.document.invalid
+                ? 'Informe um CPF com 11 números.'
+                : undefined
+            "
+            ><input
+              id="user-document"
+              formControlName="document"
+              inputmode="numeric"
+              maxlength="11"
+              autocomplete="off"
+          /></app-form-field>
+          <fieldset>
+            <legend>Papéis operacionais</legend>
+            <label><input type="checkbox" formControlName="administrativo" /> Administrativo</label
+            ><label><input type="checkbox" formControlName="mecanico" /> Mecânico</label
+            ><label><input type="checkbox" formControlName="recepcionista" /> Recepcionista</label>
+          </fieldset>
+          <div class="form-actions">
+            <button class="ui-button ui-button--primary" type="submit" [disabled]="saving()">
+              {{ saving() ? 'Salvando…' : 'Salvar alterações' }}</button
+            ><button
+              class="ui-button ui-button--secondary"
+              type="button"
+              [disabled]="saving()"
+              (click)="cancelEditing()"
+            >
+              Cancelar
+            </button>
+          </div>
+        </form>
+      } @else {
+        <dl>
+          <div>
+            <dt>Nome</dt>
+            <dd>{{ current.name }}</dd>
+          </div>
+          <div>
+            <dt>CPF</dt>
+            <dd>{{ current.document }}</dd>
+          </div>
+          <div>
+            <dt>Estado</dt>
+            <dd>{{ statusLabels[current.status] }}</dd>
+          </div>
+          <div>
+            <dt>Papéis</dt>
+            <dd>{{ current.roles.join(', ') }}</dd>
+          </div>
+          <div>
+            <dt>Atualizado em</dt>
+            <dd>{{ formatDate(current.updatedAt) }}</dd>
+          </div>
+        </dl>
+      }
+    </section>
+    <section class="panel" aria-labelledby="credential-title">
+      <h2 id="credential-title">Credencial de acesso</h2>
+      @if (credentialLoading()) {
+        <app-loading label="Consultando credencial" />
+      } @else if (credential(); as access) {
+        <p><strong>Estado:</strong> {{ credentialLabels[access.status] }}</p>
+        @if (access.expiresAt) {
+          <p><strong>Expira em:</strong> {{ formatDate(access.expiresAt) }}</p>
+        }
+      } @else if (credentialFailure()) {
+        <app-alert title="Credencial temporariamente indisponível" tone="warning"
+          ><p>
+            O cadastro operacional continua disponível. Tente consultar a credencial novamente.
+          </p>
+          <button class="ui-button ui-button--secondary" type="button" (click)="loadCredential()">
+            Tentar novamente
+          </button></app-alert
+        >
+      }
+    </section>
+  } @else if (failure()) {
+    <button class="ui-button ui-button--secondary" type="button" (click)="load()">
+      Tentar novamente
+    </button>
+  }
+</section>

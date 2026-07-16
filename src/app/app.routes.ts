@@ -100,6 +100,24 @@ export const routes: Routes = [
         title: 'Execução da oficina | Oficina SOAT',
       },
       {
+        path: 'administracao/usuarios',
+        canActivate: [roleGuard],
+        data: { roles: ['administrativo'], breadcrumb: 'Usuários' },
+        loadComponent: () =>
+          import('./features/administration/users/presentation').then(({ Users }) => Users),
+        title: 'Usuários operacionais | Oficina SOAT',
+      },
+      {
+        path: 'administracao/usuarios/:usuarioId',
+        canActivate: [roleGuard],
+        data: { roles: ['administrativo'], breadcrumb: 'Detalhes do usuário' },
+        loadComponent: () =>
+          import('./features/administration/users/presentation').then(
+            ({ UserDetail }) => UserDetail,
+          ),
+        title: 'Detalhes do usuário | Oficina SOAT',
+      },
+      {
         path: 'administracao/ativacoes/nova',
         canActivate: [roleGuard],
         data: { roles: ['administrativo'], breadcrumb: 'Ativação de credencial' },

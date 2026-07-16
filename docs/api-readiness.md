@@ -9,17 +9,18 @@
 
 ## Matriz do MVP
 
-| Capacidade             | Contrato atual                                                | Situação                                      |
-| ---------------------- | ------------------------------------------------------------- | --------------------------------------------- |
-| Login por CPF e senha  | `POST /auth/token`                                            | Pronto                                        |
-| Ativação de credencial | `POST /auth/ativacoes`                                        | Pronto                                        |
-| Clientes               | `GET/POST /api/v1/clientes`, `GET/PUT /clientes/{id}`         | Pronto, com filtros por nome, CPF e e-mail    |
-| Veículos               | rotas por cliente e por ID                                    | Pronto para cadastro/consulta vinculada       |
-| Ordens de serviço      | listagem, abertura, detalhe, histórico, estado e cancelamento | Parcial                                       |
-| Fila do mecânico       | `GET /api/v1/execucoes/fila`                                  | Parcial: lista ordenada sem paginação         |
-| Diagnóstico e reparo   | comandos de início/conclusão e consulta da execução           | Pronto                                        |
-| Erros e correlação     | contratos canônicos compartilhados                            | Pronto, sujeito à validação no cliente gerado |
-| CORS                   | não é expresso nas OpenAPI                                    | Precisa validação no `oficina-infra`          |
+| Capacidade                | Contrato atual                                                             | Situação                                                  |
+| ------------------------- | -------------------------------------------------------------------------- | --------------------------------------------------------- |
+| Login por CPF e senha     | `POST /auth/token`                                                         | Pronto                                                    |
+| Ativação de credencial    | `POST /auth/ativacoes`                                                     | Pronto                                                    |
+| Administração de usuários | CRUD e comandos em `/api/v1/usuarios`; credencial em `/auth/usuarios/{id}` | Pronto, com autoridades separadas e consistência eventual |
+| Clientes                  | `GET/POST /api/v1/clientes`, `GET/PUT /clientes/{id}`                      | Pronto, com filtros por nome, CPF e e-mail                |
+| Veículos                  | rotas por cliente e por ID                                                 | Pronto para cadastro/consulta vinculada                   |
+| Ordens de serviço         | listagem, abertura, detalhe, histórico, estado e cancelamento              | Parcial                                                   |
+| Fila do mecânico          | `GET /api/v1/execucoes/fila`                                               | Parcial: lista ordenada sem paginação                     |
+| Diagnóstico e reparo      | comandos de início/conclusão e consulta da execução                        | Pronto                                                    |
+| Erros e correlação        | contratos canônicos compartilhados                                         | Pronto, sujeito à validação no cliente gerado             |
+| CORS                      | não é expresso nas OpenAPI                                                 | Precisa validação no `oficina-infra`                      |
 
 ## Lacunas antes das respectivas telas
 

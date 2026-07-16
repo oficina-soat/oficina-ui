@@ -27,6 +27,7 @@ describe('OperationalShell', () => {
       'Usuário ***.***.***-67 · Administrativo · Mecânico',
     );
     expect(fixture.nativeElement.textContent).toContain('Ativação de credencial');
+    expect(fixture.nativeElement.textContent).toContain('Usuários');
   });
 
   it('apresenta indisponibilidade técnica global sem substituir o conteúdo', async () => {
