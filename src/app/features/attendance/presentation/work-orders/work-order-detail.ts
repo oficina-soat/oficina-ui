@@ -4,7 +4,12 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { Alert, Confirmation, DataTable, FormField, Loading } from '../../../../shared/ui';
-import type { WorkOrderHistoryEntry, WorkOrderState, WorkOrderSummary } from '../../application';
+import type {
+  WorkOrderAction,
+  WorkOrderHistoryEntry,
+  WorkOrderState,
+  WorkOrderSummary,
+} from '../../application';
 import {
   ADD_WORK_ORDER_PART,
   ADD_WORK_ORDER_SERVICE,
@@ -254,33 +259,25 @@ const commandMessages = {
             <h2 id="actions-title">Ações da OS</h2>
             <p>A API valida se a ação é permitida para o estado atual.</p>
             @if (hasStateActions()) {
-              <form [formGroup]="stateForm" (ngSubmit)="changeState()" novalidate>
-                <app-form-field
-                  inputId="next-state"
-                  label="Novo estado"
-                  [required]="true"
-                  [error]="
-                    stateForm.controls.state.touched && stateForm.controls.state.invalid
-                      ? 'Selecione um estado.'
-                      : undefined
-                  "
-                >
-                  <select id="next-state" formControlName="state">
-                    <option value="">Selecione</option>
-                    @for (state of states; track state[0]) {
-                      @if (stateAllowed(state[0])) {
-                        <option [value]="state[0]">{{ state[1] }}</option>
-                      }
-                    }
-                  </select>
-                </app-form-field>
+              <div class="state-actions" [formGroup]="stateForm">
                 <app-form-field inputId="state-reason" label="Motivo">
                   <input id="state-reason" formControlName="reason" />
                 </app-form-field>
-                <button class="ui-button ui-button--primary" type="submit" [disabled]="saving()">
-                  Alterar estado
-                </button>
-              </form>
+                <div class="action-buttons">
+                  @for (action of stateActions; track action.action) {
+                    @if (item.allowedActions.includes(action.action)) {
+                      <button
+                        class="ui-button ui-button--primary"
+                        type="button"
+                        [disabled]="saving()"
+                        (click)="changeState(action.state)"
+                      >
+                        {{ action.label }}
+                      </button>
+                    }
+                  }
+                </div>
+              </div>
             }
 
             @if (item.allowedActions.includes('CANCELAR')) {
@@ -338,6 +335,7 @@ const commandMessages = {
       overflow-wrap: anywhere;
     }
     form,
+    .state-actions,
     .cancel-action {
       display: grid;
       gap: var(--space-4);
@@ -346,6 +344,11 @@ const commandMessages = {
     .cancel-action {
       padding-top: var(--space-6);
       border-top: 1px solid var(--color-neutral-300);
+    }
+    .action-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-3);
     }
     .ui-button {
       justify-self: start;
@@ -378,15 +381,23 @@ export class WorkOrderDetail implements OnInit {
   protected readonly parts = signal<readonly StockPart[]>([]);
   protected readonly catalogLoading = signal(false);
   protected readonly confirmingCancel = signal(false);
-  protected readonly states = Object.entries(workOrderStateLabels) as readonly [
-    WorkOrderState,
-    string,
-  ][];
+  protected readonly stateActions: readonly {
+    action: WorkOrderAction;
+    state: WorkOrderState;
+    label: string;
+  }[] = [
+    { action: 'INICIAR_DIAGNOSTICO', state: 'EM_DIAGNOSTICO', label: 'Iniciar diagnóstico' },
+    { action: 'RETOMAR_DIAGNOSTICO', state: 'EM_DIAGNOSTICO', label: 'Retomar diagnóstico' },
+    {
+      action: 'CONCLUIR_DIAGNOSTICO',
+      state: 'AGUARDANDO_APROVACAO',
+      label: 'Concluir diagnóstico',
+    },
+    { action: 'INICIAR_EXECUCAO', state: 'EM_EXECUCAO', label: 'Iniciar execução' },
+    { action: 'FINALIZAR', state: 'FINALIZADA', label: 'Finalizar serviço' },
+    { action: 'ENTREGAR', state: 'ENTREGUE', label: 'Registrar entrega' },
+  ];
   readonly stateForm = new FormGroup({
-    state: new FormControl<WorkOrderState | ''>('', {
-      nonNullable: true,
-      validators: [Validators.required],
-    }),
     reason: new FormControl('', { nonNullable: true }),
   });
   readonly cancelReason = new FormControl('', { nonNullable: true });
@@ -397,14 +408,9 @@ export class WorkOrderDetail implements OnInit {
     void this.load();
   }
 
-  protected async changeState(): Promise<void> {
+  protected async changeState(state: WorkOrderState): Promise<void> {
     const id = this.id;
-    if (!id || this.stateForm.invalid || this.saving()) {
-      this.stateForm.markAllAsTouched();
-      return;
-    }
-    const state = this.stateForm.controls.state.value;
-    if (!state) return;
+    if (!id || this.saving()) return;
     await this.execute(async () => {
       this.order.set(
         await this.change.execute({
@@ -415,7 +421,7 @@ export class WorkOrderDetail implements OnInit {
         }),
       );
       this.history.set(await this.getHistory.execute(id));
-      this.stateForm.reset({ state: '', reason: '' });
+      this.stateForm.reset({ reason: '' });
       this.success.set('Estado atualizado conforme resposta da API.');
     });
   }
@@ -572,20 +578,8 @@ export class WorkOrderDetail implements OnInit {
     return workOrderStateLabels[state];
   }
 
-  protected stateAllowed(state: WorkOrderState): boolean {
-    const actions = this.order()?.allowedActions ?? [];
-    const required = {
-      EM_DIAGNOSTICO: ['INICIAR_DIAGNOSTICO', 'RETOMAR_DIAGNOSTICO'],
-      AGUARDANDO_APROVACAO: ['CONCLUIR_DIAGNOSTICO'],
-      EM_EXECUCAO: ['INICIAR_EXECUCAO'],
-      FINALIZADA: ['FINALIZAR'],
-      ENTREGUE: ['ENTREGAR'],
-      RECEBIDA: [],
-    } as const;
-    return required[state].some((action) => actions.includes(action));
-  }
-
   protected hasStateActions(): boolean {
-    return this.states.some(([state]) => this.stateAllowed(state));
+    const actions = this.order()?.allowedActions ?? [];
+    return this.stateActions.some(({ action }) => actions.includes(action));
   }
 }

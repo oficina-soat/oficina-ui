@@ -17,11 +17,26 @@
   background: var(--color-surface);
 }
 .section-header,
-.form-actions {
+.form-actions,
+.operation-actions {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-4);
+}
+.operation-actions {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  margin-top: var(--space-5);
+}
+.activation-token {
+  display: block;
+  margin-block: var(--space-3);
+  padding: var(--space-3);
+  overflow-wrap: anywhere;
+  border-radius: var(--radius-sm);
+  background: var(--color-neutral-100);
+  font-family: monospace;
 }
 form {
   display: grid;

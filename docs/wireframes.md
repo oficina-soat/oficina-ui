@@ -56,8 +56,8 @@ O campo de busca só será ativado quando houver filtro correspondente na API. A
 | Histórico                                                      |
 | data/hora     estado     motivo                                 |
 |----------------------------------------------------------------|
-| Ações apresentadas pela capacidade contratada                  |
-| [ação] [ação]                                                   |
+| Botões apresentados pela capacidade contratada                 |
+| [Iniciar diagnóstico] [Cancelar]                               |
 +----------------------------------------------------------------+
 ```
 
@@ -80,7 +80,7 @@ O campo de busca só será ativado quando houver filtro correspondente na API. A
 +----------------------------------------------------------------+
 ```
 
-Edição e ações são exibidas somente quando a autoridade correspondente as retorna em `acoesPermitidas`. Falha do Auth não oculta nem invalida o cadastro operacional carregado do OS.
+Edição e ações são exibidas somente quando a autoridade correspondente as retorna em `acoesPermitidas`. Bloqueio, reativação, inativação e geração do token exigem confirmação acessível. O token permanece apenas no estado transitório da tela. Falha do Auth não oculta nem invalida o cadastro operacional carregado do OS.
 
 ## Fila do mecânico
 

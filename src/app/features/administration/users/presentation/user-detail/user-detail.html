@@ -103,6 +103,38 @@
           </div>
         </dl>
       }
+      <div class="operation-actions" aria-label="Ações disponíveis para o usuário">
+        @if (current.allowedActions.includes('BLOQUEAR')) {
+          <button
+            class="ui-button ui-button--danger"
+            type="button"
+            [disabled]="saving()"
+            (click)="confirmAction('BLOQUEAR')"
+          >
+            Bloquear usuário
+          </button>
+        }
+        @if (current.allowedActions.includes('REATIVAR')) {
+          <button
+            class="ui-button ui-button--primary"
+            type="button"
+            [disabled]="saving()"
+            (click)="confirmAction('REATIVAR')"
+          >
+            Reativar usuário
+          </button>
+        }
+        @if (current.allowedActions.includes('INATIVAR')) {
+          <button
+            class="ui-button ui-button--danger"
+            type="button"
+            [disabled]="saving()"
+            (click)="confirmAction('INATIVAR')"
+          >
+            Inativar usuário
+          </button>
+        }
+      </div>
     </section>
     <section class="panel" aria-labelledby="credential-title">
       <h2 id="credential-title">Credencial de acesso</h2>
@@ -112,6 +144,16 @@
         <p><strong>Estado:</strong> {{ credentialLabels[access.status] }}</p>
         @if (access.expiresAt) {
           <p><strong>Expira em:</strong> {{ formatDate(access.expiresAt) }}</p>
+        }
+        @if (access.allowedActions.includes('SOLICITAR_ATIVACAO')) {
+          <button
+            class="ui-button ui-button--primary"
+            type="button"
+            [disabled]="saving()"
+            (click)="confirmAction('SOLICITAR_ATIVACAO')"
+          >
+            Gerar token de ativação
+          </button>
         }
       } @else if (credentialFailure()) {
         <app-alert title="Credencial temporariamente indisponível" tone="warning"
@@ -124,9 +166,32 @@
         >
       }
     </section>
+    @if (activationToken(); as token) {
+      <app-alert title="Token de ativação" tone="warning">
+        <p>
+          Copie e entregue o segredo por um canal seguro. Ele não será armazenado pela interface.
+        </p>
+        <output class="activation-token" aria-label="Token de ativação gerado">{{ token }}</output>
+        <button
+          class="ui-button ui-button--secondary"
+          type="button"
+          (click)="clearActivationToken()"
+        >
+          Ocultar token
+        </button>
+      </app-alert>
+    }
   } @else if (failure()) {
     <button class="ui-button ui-button--secondary" type="button" (click)="load()">
       Tentar novamente
     </button>
   }
+  <app-confirmation
+    [open]="pendingAction() !== null"
+    [title]="confirmationTitle()"
+    [description]="confirmationDescription()"
+    confirmLabel="Confirmar ação"
+    (confirmed)="executeConfirmedAction()"
+    (cancelled)="cancelAction()"
+  />
 </section>

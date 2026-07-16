@@ -2,13 +2,26 @@ import { ChangeDetectionStrategy, Component, inject, signal, type OnInit } from 
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ApiError } from '../../../../../core/http/api-error';
-import { Alert, FormField, Loading } from '../../../../../shared/ui';
-import type { OperationalUser, UserCredential, UserRole, UserStatus } from '../../application';
+import { Alert, Confirmation, FormField, Loading } from '../../../../../shared/ui';
+import type {
+  CredentialAction,
+  OperationalUser,
+  UserAction,
+  UserCredential,
+  UserRole,
+  UserStatus,
+} from '../../application';
 import {
+  BLOCK_OPERATIONAL_USER,
   GET_OPERATIONAL_USER,
   GET_USER_CREDENTIAL,
+  INACTIVATE_OPERATIONAL_USER,
+  REACTIVATE_OPERATIONAL_USER,
+  REQUEST_USER_CREDENTIAL_ACTIVATION,
   UPDATE_OPERATIONAL_USER,
 } from '../../public-api';
+
+type PendingUserAction = Exclude<UserAction, 'ATUALIZAR_DADOS'> | CredentialAction;
 
 const statusLabels: Readonly<Record<UserStatus, string>> = {
   ATIVO: 'Ativo',
@@ -23,7 +36,7 @@ const credentialLabels = {
 
 @Component({
   selector: 'app-user-detail',
-  imports: [Alert, FormField, Loading, ReactiveFormsModule, RouterLink],
+  imports: [Alert, Confirmation, FormField, Loading, ReactiveFormsModule, RouterLink],
   templateUrl: './user-detail.html',
   styleUrl: './user-detail.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -32,7 +45,11 @@ export class UserDetail implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly getUser = inject(GET_OPERATIONAL_USER);
   private readonly updateUser = inject(UPDATE_OPERATIONAL_USER);
+  private readonly blockUser = inject(BLOCK_OPERATIONAL_USER);
+  private readonly reactivateUser = inject(REACTIVATE_OPERATIONAL_USER);
+  private readonly inactivateUser = inject(INACTIVATE_OPERATIONAL_USER);
   private readonly getCredential = inject(GET_USER_CREDENTIAL);
+  private readonly requestActivation = inject(REQUEST_USER_CREDENTIAL_ACTIVATION);
   private readonly userId = this.route.snapshot.paramMap.get('usuarioId') ?? '';
   protected readonly user = signal<OperationalUser | null>(null);
   protected readonly credential = signal<UserCredential | null>(null);
@@ -44,6 +61,8 @@ export class UserDetail implements OnInit {
   protected readonly correlationId = signal<string | null>(null);
   protected readonly credentialFailure = signal(false);
   protected readonly success = signal<string | null>(null);
+  protected readonly pendingAction = signal<PendingUserAction | null>(null);
+  protected readonly activationToken = signal<string | null>(null);
   protected readonly statusLabels = statusLabels;
   protected readonly credentialLabels = credentialLabels;
   readonly form = new FormGroup({
@@ -135,6 +154,87 @@ export class UserDetail implements OnInit {
     }
   }
 
+  protected confirmAction(action: PendingUserAction): void {
+    const operational = this.user()?.allowedActions.includes(action as UserAction) ?? false;
+    const credential =
+      this.credential()?.allowedActions.includes(action as CredentialAction) ?? false;
+    if (operational || credential) this.pendingAction.set(action);
+  }
+
+  protected cancelAction(): void {
+    this.pendingAction.set(null);
+  }
+
+  protected async executeConfirmedAction(): Promise<void> {
+    const action = this.pendingAction();
+    this.pendingAction.set(null);
+    if (!action || this.saving()) return;
+    this.saving.set(true);
+    this.clearFailure();
+    this.success.set(null);
+    try {
+      if (action === 'SOLICITAR_ATIVACAO') {
+        const activation = await this.requestActivation.execute(this.userId);
+        this.activationToken.set(activation.activationToken);
+        this.success.set('Token de ativação gerado. Ele será exibido somente nesta tela.');
+        await this.loadCredential();
+        return;
+      }
+      if (action === 'INATIVAR') {
+        await this.inactivateUser.execute(this.userId);
+        const user = await this.getUser.execute(this.userId);
+        this.updateCurrentUser(user);
+        this.success.set('Usuário inativado conforme resposta do serviço.');
+        return;
+      }
+      const command = { userId: this.userId, idempotencyKey: crypto.randomUUID() };
+      const user =
+        action === 'BLOQUEAR'
+          ? await this.blockUser.execute(command)
+          : await this.reactivateUser.execute(command);
+      this.updateCurrentUser(user);
+      this.success.set(
+        action === 'BLOQUEAR'
+          ? 'Usuário bloqueado conforme resposta do serviço.'
+          : 'Usuário reativado conforme resposta do serviço.',
+      );
+      await this.loadCredential();
+    } catch (error: unknown) {
+      this.handleFailure(error);
+    } finally {
+      this.saving.set(false);
+    }
+  }
+
+  protected confirmationTitle(): string {
+    const titles: Record<PendingUserAction, string> = {
+      BLOQUEAR: 'Bloquear usuário',
+      REATIVAR: 'Reativar usuário',
+      INATIVAR: 'Inativar usuário',
+      SOLICITAR_ATIVACAO: 'Gerar token de ativação',
+    };
+    return this.pendingAction()
+      ? titles[this.pendingAction() as PendingUserAction]
+      : 'Confirmar ação';
+  }
+
+  protected confirmationDescription(): string {
+    const descriptions: Record<PendingUserAction, string> = {
+      BLOQUEAR: 'O acesso do usuário será bloqueado. Deseja continuar?',
+      REATIVAR: 'O usuário voltará ao estado ativo. Deseja continuar?',
+      INATIVAR: 'O usuário será inativado e deixará de operar na oficina. Deseja continuar?',
+      SOLICITAR_ATIVACAO:
+        'Um novo segredo de uso único será gerado e tokens anteriores serão invalidados. Deseja continuar?',
+    };
+    return this.pendingAction()
+      ? descriptions[this.pendingAction() as PendingUserAction]
+      : 'Deseja continuar?';
+  }
+
+  protected clearActivationToken(): void {
+    this.activationToken.set(null);
+  }
+
   protected formatDate(value: string): string {
     return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(
       new Date(value),
@@ -162,6 +262,12 @@ export class UserDetail implements OnInit {
       mecanico: user.roles.includes('mecanico'),
       recepcionista: user.roles.includes('recepcionista'),
     });
+  }
+
+  private updateCurrentUser(user: OperationalUser): void {
+    this.user.set(user);
+    this.fillForm(user);
+    this.editing.set(false);
   }
 
   private handleFailure(error: unknown): void {

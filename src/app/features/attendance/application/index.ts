@@ -18,6 +18,7 @@ export type {
   VehicleFailureReason,
   VeiculoResumo,
   WorkOrderFailureReason,
+  WorkOrderAction,
   WorkOrderState,
   WorkOrderSummary,
   WorkOrderServiceItem,
