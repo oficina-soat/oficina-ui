@@ -122,6 +122,7 @@ jobs:
             echo "ecr_repository_url=$(terraform output -raw ecr_repository_url)"
             echo "cluster_name=$(terraform output -raw eks_cluster_name)"
             echo "url=$(terraform output -raw ui_url)"
+            echo "observability_endpoint=$(terraform output -raw ui_observability_endpoint)"
           } >> "${GITHUB_OUTPUT}"
 
       - name: Validate runtime endpoints
@@ -144,6 +145,7 @@ jobs:
         env:
           RESOLVED_UI_API_BASE_URL: ${{ steps.runtime.outputs.api_base_url }}
           RESOLVED_UI_AUTH_BASE_URL: ${{ steps.runtime.outputs.auth_base_url }}
+          DEFAULT_UI_OBSERVABILITY_ENDPOINT: ${{ steps.hosting.outputs.observability_endpoint }}
         shell: bash
         run: |
           set -euo pipefail
@@ -151,7 +153,7 @@ jobs:
           jq -n \
             --arg apiBaseUrl "${RESOLVED_UI_API_BASE_URL%/}" \
             --arg authBaseUrl "${RESOLVED_UI_AUTH_BASE_URL%/}" \
-            --arg observabilityEndpoint "${UI_OBSERVABILITY_ENDPOINT%/}" \
+            --arg observabilityEndpoint "${UI_OBSERVABILITY_ENDPOINT:-${DEFAULT_UI_OBSERVABILITY_ENDPOINT}}" \
             --arg release "${GITHUB_SHA}" \
             '{apiBaseUrl: $apiBaseUrl, authBaseUrl: $authBaseUrl}
               + if $observabilityEndpoint == "" then {}
