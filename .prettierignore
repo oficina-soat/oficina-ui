@@ -1,2 +1,2 @@
 contracts/openapi/
-src/app/features/*/infrastructure/generated/
+src/app/features/**/infrastructure/generated/
