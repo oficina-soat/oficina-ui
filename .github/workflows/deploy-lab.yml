@@ -22,6 +22,7 @@ env:
   TF_STATE_DYNAMODB_TABLE: ${{ vars.TF_STATE_DYNAMODB_TABLE }}
   UI_API_BASE_URL: ${{ vars.UI_API_BASE_URL }}
   UI_AUTH_BASE_URL: ${{ vars.UI_AUTH_BASE_URL }}
+  UI_OBSERVABILITY_ENDPOINT: ${{ vars.UI_OBSERVABILITY_ENDPOINT }}
 
 jobs:
   quality-gate:
@@ -99,7 +100,16 @@ jobs:
           jq -n \
             --arg apiBaseUrl "${UI_API_BASE_URL%/}" \
             --arg authBaseUrl "${UI_AUTH_BASE_URL%/}" \
-            '{apiBaseUrl: $apiBaseUrl, authBaseUrl: $authBaseUrl}' \
+            --arg observabilityEndpoint "${UI_OBSERVABILITY_ENDPOINT%/}" \
+            --arg release "${GITHUB_SHA}" \
+            '{apiBaseUrl: $apiBaseUrl, authBaseUrl: $authBaseUrl}
+              + if $observabilityEndpoint == "" then {}
+                else {observability: {
+                  endpoint: $observabilityEndpoint,
+                  environment: "lab",
+                  release: $release
+                }}
+                end' \
             > dist/oficina-ui/browser/config/runtime-config.json
           jq -n \
             --arg repository "${GITHUB_REPOSITORY}" \

@@ -5,7 +5,7 @@ A UI não é uma fronteira de autorização. As APIs continuam responsáveis por
 ## Build e configuração
 
 - source maps e nomes de chunks estão explicitamente desabilitados em produção;
-- a configuração de runtime aceita somente `apiBaseUrl` e `authBaseUrl`, usando caminhos relativos ou HTTPS;
+- a configuração de runtime aceita somente `apiBaseUrl`, `authBaseUrl` e a seção opcional `observability`, usando caminhos relativos ou HTTPS;
 - endpoints são configuração pública, nunca local para credenciais, tokens ou chaves;
 - o bootstrap registra apenas uma mensagem genérica, sem serializar erros ou respostas;
 - `npm run test:security` inspeciona o build e falha ao encontrar source maps, arquivos de chave ou padrões de credenciais e tokens;

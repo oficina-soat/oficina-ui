@@ -1,9 +1,11 @@
 import { HttpClient, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { SessionStore } from '../auth/session.store';
+import { RUNTIME_CONFIG } from '../config/runtime-config';
+import { BrowserObservability } from '../observability/browser-observability';
 import { ApiAvailabilityStore } from './api-availability.store';
 import type { ApiError } from './api-error';
 import {
@@ -23,6 +25,10 @@ describe('interceptors HTTP', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       providers: [
+        {
+          provide: RUNTIME_CONFIG,
+          useValue: { apiBaseUrl: '/api/v1', authBaseUrl: '' },
+        },
         provideHttpClient(
           withInterceptors([
             authInterceptor,
@@ -81,6 +87,7 @@ describe('interceptors HTTP', () => {
   });
 
   it('converte o erro canônico sem perder detalhes e correlação', async () => {
+    const recordApiError = vi.spyOn(TestBed.inject(BrowserObservability), 'recordApiError');
     const result = http.get('/api/v1/clientes');
     const promise = new Promise<ApiError>((resolve) => {
       result.subscribe({ error: (error: ApiError) => resolve(error) });
@@ -102,5 +109,9 @@ describe('interceptors HTTP', () => {
       correlationId: 'corr-body',
       details: [{ field: 'documento', code: 'REQUIRED', message: 'Campo obrigatório.' }],
     });
+    expect(recordApiError).toHaveBeenCalledWith(
+      expect.objectContaining({ correlationId: 'corr-body' }),
+      'GET',
+    );
   });
 });

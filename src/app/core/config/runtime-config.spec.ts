@@ -21,11 +21,21 @@ describe('runtime config', () => {
     respond({
       apiBaseUrl: 'https://api.example/api/v1',
       authBaseUrl: 'https://api.example',
+      observability: {
+        endpoint: 'https://telemetry.example/events',
+        environment: 'lab',
+        release: 'abc123',
+      },
     });
 
     await expect(loadRuntimeConfig()).resolves.toEqual({
       apiBaseUrl: 'https://api.example/api/v1',
       authBaseUrl: 'https://api.example',
+      observability: {
+        endpoint: 'https://telemetry.example/events',
+        environment: 'lab',
+        release: 'abc123',
+      },
     });
   });
 
@@ -33,6 +43,15 @@ describe('runtime config', () => {
     { apiBaseUrl: 'javascript:alert(1)', authBaseUrl: '' },
     { apiBaseUrl: '/api/v1', authBaseUrl: 'http://insecure.example' },
     { apiBaseUrl: '/api/v1', authBaseUrl: '', token: 'não permitido' },
+    {
+      apiBaseUrl: '/api/v1',
+      authBaseUrl: '',
+      observability: {
+        endpoint: 'http://telemetry.example/events',
+        environment: 'lab',
+        release: 'abc123',
+      },
+    },
   ])('rejeita configuração insegura ou com campos adicionais', async (config) => {
     respond(config);
     await expect(loadRuntimeConfig()).rejects.toThrow('Configuração de runtime inválida.');

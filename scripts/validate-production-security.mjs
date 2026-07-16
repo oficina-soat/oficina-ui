@@ -56,8 +56,14 @@ for (const file of files) {
 const runtimePath = join(buildRoot, 'config', 'runtime-config.json');
 const runtime = JSON.parse(await readFile(runtimePath, 'utf8'));
 const runtimeKeys = Object.keys(runtime).sort();
-if (runtimeKeys.join(',') !== 'apiBaseUrl,authBaseUrl') {
-  violations.push('runtime-config.json deve conter somente apiBaseUrl e authBaseUrl.');
+if (
+  !['apiBaseUrl,authBaseUrl', 'apiBaseUrl,authBaseUrl,observability'].includes(
+    runtimeKeys.join(','),
+  )
+) {
+  violations.push(
+    'runtime-config.json deve conter somente apiBaseUrl, authBaseUrl e observability opcional.',
+  );
 }
 
 if (violations.length > 0) {

@@ -3,6 +3,11 @@ import { InjectionToken } from '@angular/core';
 export interface RuntimeConfig {
   readonly apiBaseUrl: string;
   readonly authBaseUrl: string;
+  readonly observability?: {
+    readonly endpoint: string;
+    readonly environment: string;
+    readonly release: string;
+  };
 }
 
 export const RUNTIME_CONFIG = new InjectionToken<RuntimeConfig>('RUNTIME_CONFIG');
@@ -18,13 +23,29 @@ const isRuntimeConfig = (value: unknown): value is RuntimeConfig => {
     ((allowEmpty && endpoint === '') ||
       endpoint.startsWith('/') ||
       endpoint.startsWith('https://'));
+  const observability = candidate['observability'];
+  const validObservability =
+    observability === undefined ||
+    (typeof observability === 'object' &&
+      observability !== null &&
+      Object.keys(observability).length === 3 &&
+      Object.keys(observability).every((key) =>
+        ['endpoint', 'environment', 'release'].includes(key),
+      ) &&
+      validEndpoint((observability as Record<string, unknown>)['endpoint']) &&
+      typeof (observability as Record<string, unknown>)['environment'] === 'string' &&
+      typeof (observability as Record<string, unknown>)['release'] === 'string');
 
   return (
-    Object.keys(candidate).every((key) => ['apiBaseUrl', 'authBaseUrl'].includes(key)) &&
-    Object.keys(candidate).length === 2 &&
+    Object.keys(candidate).every((key) =>
+      ['apiBaseUrl', 'authBaseUrl', 'observability'].includes(key),
+    ) &&
+    Object.keys(candidate).length >= 2 &&
+    Object.keys(candidate).length <= 3 &&
     validEndpoint(candidate['apiBaseUrl']) &&
     candidate['apiBaseUrl'].length > 0 &&
-    validEndpoint(candidate['authBaseUrl'], true)
+    validEndpoint(candidate['authBaseUrl'], true) &&
+    validObservability
   );
 };
 

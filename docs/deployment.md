@@ -11,6 +11,7 @@ A UI é publicada por um pipeline próprio em uma stack opcional de S3 e CloudFr
    - `TF_STATE_BUCKET`, `TF_STATE_REGION` e, se usado, `TF_STATE_DYNAMODB_TABLE`;
    - `UI_API_BASE_URL`, incluindo `/api/v1`;
    - `UI_AUTH_BASE_URL`, contendo somente o origin do API Gateway.
+   - opcionalmente, `UI_OBSERVABILITY_ENDPOINT`, com o endpoint HTTPS do coletor de telemetria.
 
 O pipeline lê `bucket_name`, `cloudfront_distribution_id` e `ui_url` diretamente do state isolado. Nenhum nome de recurso de hospedagem é duplicado no repositório da UI.
 

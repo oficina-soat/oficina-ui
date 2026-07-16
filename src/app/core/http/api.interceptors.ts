@@ -4,6 +4,7 @@ import { inject } from '@angular/core';
 import { catchError, tap, throwError } from 'rxjs';
 
 import { SessionStore } from '../auth/session.store';
+import { BrowserObservability } from '../observability/browser-observability';
 import { ApiAvailabilityStore } from './api-availability.store';
 import { toApiError } from './api-error';
 import { IDEMPOTENCY_KEY, SKIP_AUTH } from './request-context';
@@ -33,6 +34,7 @@ export const idempotencyInterceptor: HttpInterceptorFn = (request, next) => {
 
 export const apiErrorInterceptor: HttpInterceptorFn = (request, next) => {
   const availability = inject(ApiAvailabilityStore);
+  const observability = inject(BrowserObservability);
   return next(request).pipe(
     tap((event) => {
       if (event instanceof HttpResponse) availability.clear();
@@ -40,6 +42,7 @@ export const apiErrorInterceptor: HttpInterceptorFn = (request, next) => {
     catchError((error: unknown) => {
       if (!(error instanceof HttpErrorResponse)) return throwError(() => error);
       const apiError = toApiError(error.status, error.error, error.headers.get('X-Correlation-Id'));
+      observability.recordApiError(apiError, request.method);
       if (error.status === 0 || error.status >= 500) {
         availability.report(apiError.correlationId);
       }

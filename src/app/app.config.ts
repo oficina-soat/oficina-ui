@@ -1,4 +1,9 @@
-import { provideBrowserGlobalErrorListeners } from '@angular/core';
+import {
+  ErrorHandler,
+  inject,
+  provideBrowserGlobalErrorListeners,
+  provideEnvironmentInitializer,
+} from '@angular/core';
 import type { ApplicationConfig } from '@angular/core';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideRouter } from '@angular/router';
@@ -10,11 +15,13 @@ import {
   correlationInterceptor,
   idempotencyInterceptor,
 } from './core/http/api.interceptors';
+import { BrowserObservability, SafeErrorHandler } from './core/observability/browser-observability';
 import { routes } from './app.routes';
 
 export const createAppConfig = (runtimeConfig: RuntimeConfig): ApplicationConfig => ({
   providers: [
     provideBrowserGlobalErrorListeners(),
+    provideEnvironmentInitializer(() => inject(BrowserObservability).start()),
     provideRouter(routes),
     provideHttpClient(
       withInterceptors([
@@ -25,5 +32,6 @@ export const createAppConfig = (runtimeConfig: RuntimeConfig): ApplicationConfig
       ]),
     ),
     { provide: RUNTIME_CONFIG, useValue: runtimeConfig },
+    { provide: ErrorHandler, useClass: SafeErrorHandler },
   ],
 });
