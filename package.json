@@ -14,10 +14,11 @@
     "test": "ng test",
     "test:ci": "ng test --watch=false --coverage",
     "test:architecture": "node scripts/validate-architecture.mjs",
+    "test:security": "node scripts/validate-production-security.mjs",
     "test:e2e": "playwright test",
     "lint": "ng lint",
     "audit:production": "npm audit --omit=dev --audit-level=high",
-    "validate": "npm run api:generate && npm run format:check && npm run lint && npm run test:architecture && npm run test:ci && npm run build && npm run audit:production"
+    "validate": "npm run api:generate && npm run format:check && npm run lint && npm run test:architecture && npm run test:ci && npm run build && npm run test:security && npm run audit:production"
   },
   "private": true,
   "engines": {

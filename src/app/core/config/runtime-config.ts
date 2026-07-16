@@ -13,10 +13,18 @@ const isRuntimeConfig = (value: unknown): value is RuntimeConfig => {
   }
 
   const candidate = value as Record<string, unknown>;
+  const validEndpoint = (endpoint: unknown, allowEmpty = false): endpoint is string =>
+    typeof endpoint === 'string' &&
+    ((allowEmpty && endpoint === '') ||
+      endpoint.startsWith('/') ||
+      endpoint.startsWith('https://'));
+
   return (
-    typeof candidate['apiBaseUrl'] === 'string' &&
+    Object.keys(candidate).every((key) => ['apiBaseUrl', 'authBaseUrl'].includes(key)) &&
+    Object.keys(candidate).length === 2 &&
+    validEndpoint(candidate['apiBaseUrl']) &&
     candidate['apiBaseUrl'].length > 0 &&
-    typeof candidate['authBaseUrl'] === 'string'
+    validEndpoint(candidate['authBaseUrl'], true)
   );
 };
 

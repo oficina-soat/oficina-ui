@@ -59,6 +59,7 @@ flowchart LR
 - [Prontidão das APIs](docs/api-readiness.md)
 - [Wireframes](docs/wireframes.md)
 - [Acessibilidade](docs/accessibility.md)
+- [Segurança](docs/security.md)
 - [Deploy no lab](docs/deployment.md)
 - [Como contribuir](CONTRIBUTING.md)
 - [Roadmap normativo](https://github.com/oficina-soat/oficina-platform/blob/main/docs/frontend/roadmap.md)
