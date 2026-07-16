@@ -8,6 +8,12 @@ export {
   START_REPAIR,
 } from './execution.providers';
 export {
+  GET_STOCK_BALANCE,
+  LIST_STOCK_MOVEMENTS,
+  LIST_STOCK_PARTS,
+  REGISTER_STOCK_ENTRY,
+} from './execution.providers';
+export {
   ExecutionOperationError,
   type ExecutionFailureReason,
   type ExecutionStatus,

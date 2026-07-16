@@ -6,6 +6,10 @@ import {
   CompleteRepair,
   GetExecution,
   ListExecutionQueue,
+  GetStockBalance,
+  ListStockMovements,
+  ListStockParts,
+  RegisterStockEntry,
   StartDiagnosis,
   StartRepair,
 } from './application';
@@ -38,4 +42,20 @@ export const COMPLETE_REPAIR = new InjectionToken<CompleteRepair>('COMPLETE_REPA
 export const CANCEL_EXECUTION = new InjectionToken<CancelExecution>('CANCEL_EXECUTION', {
   providedIn: 'root',
   factory: () => new CancelExecution(inject(ExecutionApiAdapter)),
+});
+export const LIST_STOCK_PARTS = new InjectionToken<ListStockParts>('LIST_STOCK_PARTS', {
+  providedIn: 'root',
+  factory: () => new ListStockParts(inject(ExecutionApiAdapter)),
+});
+export const GET_STOCK_BALANCE = new InjectionToken<GetStockBalance>('GET_STOCK_BALANCE', {
+  providedIn: 'root',
+  factory: () => new GetStockBalance(inject(ExecutionApiAdapter)),
+});
+export const LIST_STOCK_MOVEMENTS = new InjectionToken<ListStockMovements>('LIST_STOCK_MOVEMENTS', {
+  providedIn: 'root',
+  factory: () => new ListStockMovements(inject(ExecutionApiAdapter)),
+});
+export const REGISTER_STOCK_ENTRY = new InjectionToken<RegisterStockEntry>('REGISTER_STOCK_ENTRY', {
+  providedIn: 'root',
+  factory: () => new RegisterStockEntry(inject(ExecutionApiAdapter)),
 });

@@ -10,6 +10,23 @@ export type {
   FilaExecucao,
 } from './execution-gateway';
 export {
+  GetStockBalance,
+  ListStockMovements,
+  ListStockParts,
+  RegisterStockEntry,
+} from './execution-gateway';
+export type {
+  MovementQuery,
+  Page,
+  StockAction,
+  StockBalance,
+  StockEntryCommand,
+  StockMovement,
+  StockMovementType,
+  StockPart,
+  StockQuery,
+} from './execution-gateway';
+export {
   CancelExecution,
   CompleteDiagnosis,
   CompleteRepair,

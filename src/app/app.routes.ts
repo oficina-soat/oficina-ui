@@ -67,6 +67,13 @@ export const routes: Routes = [
         data: { breadcrumb: 'Consultar ordem de serviço' },
       },
       {
+        path: 'estoque',
+        canActivate: [roleGuard],
+        data: { roles: ['administrativo', 'mecanico'], breadcrumb: 'Estoque' },
+        loadComponent: () => import('./features/execution/presentation').then(({ Stock }) => Stock),
+        title: 'Estoque | Oficina SOAT',
+      },
+      {
         path: 'fila-execucao',
         canActivate: [roleGuard],
         data: { roles: ['mecanico'], breadcrumb: 'Fila de execução' },

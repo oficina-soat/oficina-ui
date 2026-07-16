@@ -123,4 +123,70 @@ describe('ExecutionApiAdapter', () => {
       allowedActions: [],
     });
   });
+
+  it('mapeia catálogo, saldo, movimentos e entrada preservando ações canônicas', async () => {
+    const partsResult = adapter.consultarPecas({ name: 'bateria', page: 0 });
+    const partsRequest = httpTesting.expectOne((request) => request.url.endsWith('/pecas'));
+    expect(partsRequest.request.params.get('nome')).toBe('bateria');
+    partsRequest.flush({
+      items: [
+        {
+          pecaId: 'peca-1',
+          nome: 'Bateria',
+          codigo: 'BAT',
+          valorUnitario: 300,
+          ativo: true,
+          criadoEm: '2026-01-01T00:00:00Z',
+          atualizadoEm: '2026-01-01T00:00:00Z',
+        },
+      ],
+      page: 0,
+      size: 20,
+      totalElements: 1,
+      totalPages: 1,
+    });
+    await expect(partsResult).resolves.toMatchObject({
+      items: [{ id: 'peca-1', code: 'BAT' }],
+      totalElements: 1,
+    });
+
+    const balanceResult = adapter.consultarSaldo('peca-1');
+    httpTesting.expectOne('https://api.example/api/v1/estoques/pecas/peca-1/saldo').flush({
+      pecaId: 'peca-1',
+      quantidadeDisponivel: 4,
+      quantidadeReservada: 1,
+      atualizadoEm: '2026-01-01T00:00:00Z',
+      acoesPermitidas: ['REGISTRAR_ENTRADA'],
+    });
+    await expect(balanceResult).resolves.toMatchObject({
+      available: 4,
+      allowedActions: ['REGISTRAR_ENTRADA'],
+    });
+
+    const movementsResult = adapter.consultarMovimentos({ partId: 'peca-1', type: 'ENTRADA' });
+    const movementsRequest = httpTesting.expectOne((request) =>
+      request.url.endsWith('/estoques/movimentos'),
+    );
+    expect(movementsRequest.request.params.get('tipo')).toBe('ENTRADA');
+    movementsRequest.flush({ items: [], page: 0, size: 20, totalElements: 0, totalPages: 0 });
+    await expect(movementsResult).resolves.toMatchObject({ items: [] });
+
+    const entryResult = adapter.registrarEntrada({
+      partId: 'peca-1',
+      quantity: 3,
+      idempotencyKey: 'entry-key-123',
+    });
+    const entryRequest = httpTesting.expectOne(
+      'https://api.example/api/v1/estoques/movimentos/entrada',
+    );
+    expect(entryRequest.request.headers.get('X-Idempotency-Key')).toBe('entry-key-123');
+    entryRequest.flush({
+      movimentoId: 'mov-1',
+      pecaId: 'peca-1',
+      tipo: 'ENTRADA',
+      quantidade: 3,
+      criadoEm: '2026-01-01T00:00:00Z',
+    });
+    await expect(entryResult).resolves.toMatchObject({ id: 'mov-1', type: 'ENTRADA' });
+  });
 });

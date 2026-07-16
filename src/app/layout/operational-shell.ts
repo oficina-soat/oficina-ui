@@ -68,6 +68,9 @@ export class OperationalShell {
     if (this.session.hasAnyRole(['administrativo'])) {
       items.push({ label: 'Ativação de credencial', href: '/administracao/ativacoes/nova' });
     }
+    if (this.session.hasAnyRole(['administrativo', 'mecanico'])) {
+      items.push({ label: 'Estoque', href: '/estoque' });
+    }
     if (this.session.hasAnyRole(['mecanico'])) {
       items.push({ label: 'Fila de execução', href: '/fila-execucao' });
     }

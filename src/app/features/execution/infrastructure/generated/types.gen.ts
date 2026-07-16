@@ -19,6 +19,10 @@ export type Servico = ServicoCreateRequest & {
     atualizadoEm: string;
 };
 
+export type ServicoPage = PageMetadata & {
+    items: Array<Servico>;
+};
+
 export type PecaCreateRequest = {
     nome: string;
     codigo: string;
@@ -34,11 +38,16 @@ export type Peca = PecaCreateRequest & {
     atualizadoEm: string;
 };
 
+export type PecaPage = PageMetadata & {
+    items: Array<Peca>;
+};
+
 export type SaldoEstoque = {
     pecaId: string;
     quantidadeDisponivel: number;
     quantidadeReservada: number;
     atualizadoEm: string;
+    acoesPermitidas: Array<AcaoPermitidaEstoque>;
 };
 
 export type MovimentoEstoqueRequest = {
@@ -55,6 +64,19 @@ export type MovimentoEstoque = MovimentoEstoqueRequest & {
 };
 
 export type TipoMovimentoEstoque = 'ENTRADA' | 'RESERVA' | 'CONSUMO' | 'ESTORNO';
+
+export type AcaoPermitidaEstoque = 'REGISTRAR_ENTRADA';
+
+export type MovimentoEstoquePage = PageMetadata & {
+    items: Array<MovimentoEstoque>;
+};
+
+export type PageMetadata = {
+    page: number;
+    size: number;
+    totalElements: number;
+    totalPages: number;
+};
 
 export type ExecucaoCreateRequest = {
     ordemServicoId: string;
@@ -120,6 +142,21 @@ export type ErrorDetail = {
 };
 
 /**
+ * Trecho do nome sem distinção entre maiúsculas e minúsculas.
+ */
+export type NomeFilter = string;
+
+/**
+ * Índice da página, iniciado em zero.
+ */
+export type Page = number;
+
+/**
+ * Quantidade por página, limitada a 100.
+ */
+export type Size = number;
+
+/**
  * Identificador de correlacao aceito do cliente e propagado em chamadas HTTP, eventos, logs e traces, conforme contracts/error-model.md.
  */
 export type CorrelationId = string;
@@ -146,7 +183,20 @@ export type ConsultarServicosData = {
         'X-Correlation-Id'?: string;
     };
     path?: never;
-    query?: never;
+    query?: {
+        /**
+         * Trecho do nome sem distinção entre maiúsculas e minúsculas.
+         */
+        nome?: string;
+        /**
+         * Índice da página, iniciado em zero.
+         */
+        page?: number;
+        /**
+         * Quantidade por página, limitada a 100.
+         */
+        size?: number;
+    };
     url: '/servicos';
 };
 
@@ -163,7 +213,7 @@ export type ConsultarServicosResponses = {
     /**
      * Servicos encontrados.
      */
-    200: Array<Servico>;
+    200: ServicoPage;
 };
 
 export type ConsultarServicosResponse = ConsultarServicosResponses[keyof ConsultarServicosResponses];
@@ -302,7 +352,21 @@ export type ConsultarPecasData = {
         'X-Correlation-Id'?: string;
     };
     path?: never;
-    query?: never;
+    query?: {
+        /**
+         * Trecho do nome sem distinção entre maiúsculas e minúsculas.
+         */
+        nome?: string;
+        codigo?: string;
+        /**
+         * Índice da página, iniciado em zero.
+         */
+        page?: number;
+        /**
+         * Quantidade por página, limitada a 100.
+         */
+        size?: number;
+    };
     url: '/pecas';
 };
 
@@ -319,7 +383,7 @@ export type ConsultarPecasResponses = {
     /**
      * Pecas encontradas.
      */
-    200: Array<Peca>;
+    200: PecaPage;
 };
 
 export type ConsultarPecasResponse = ConsultarPecasResponses[keyof ConsultarPecasResponses];
@@ -498,6 +562,15 @@ export type ConsultarMovimentosEstoqueData = {
     query?: {
         pecaId?: string;
         ordemServicoId?: string;
+        tipo?: TipoMovimentoEstoque;
+        /**
+         * Índice da página, iniciado em zero.
+         */
+        page?: number;
+        /**
+         * Quantidade por página, limitada a 100.
+         */
+        size?: number;
     };
     url: '/estoques/movimentos';
 };
@@ -515,7 +588,7 @@ export type ConsultarMovimentosEstoqueResponses = {
     /**
      * Movimentacoes encontradas.
      */
-    200: Array<MovimentoEstoque>;
+    200: MovimentoEstoquePage;
 };
 
 export type ConsultarMovimentosEstoqueResponse = ConsultarMovimentosEstoqueResponses[keyof ConsultarMovimentosEstoqueResponses];

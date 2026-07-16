@@ -44,6 +44,58 @@ export interface ExecutionCommand {
   readonly notes?: string;
 }
 
+export interface Page<T> {
+  readonly items: readonly T[];
+  readonly page: number;
+  readonly size: number;
+  readonly totalElements: number;
+  readonly totalPages: number;
+}
+
+export interface StockPart {
+  readonly id: string;
+  readonly name: string;
+  readonly code: string;
+  readonly unitPrice: number;
+  readonly active: boolean;
+}
+export type StockAction = 'REGISTRAR_ENTRADA';
+export interface StockBalance {
+  readonly partId: string;
+  readonly available: number;
+  readonly reserved: number;
+  readonly updatedAt: string;
+  readonly allowedActions: readonly StockAction[];
+}
+export type StockMovementType = 'ENTRADA' | 'RESERVA' | 'CONSUMO' | 'ESTORNO';
+export interface StockMovement {
+  readonly id: string;
+  readonly partId: string;
+  readonly workOrderId?: string;
+  readonly type: StockMovementType;
+  readonly quantity: number;
+  readonly reason?: string;
+  readonly createdAt: string;
+}
+export interface StockQuery {
+  readonly name?: string;
+  readonly code?: string;
+  readonly page?: number;
+  readonly size?: number;
+}
+export interface MovementQuery {
+  readonly partId: string;
+  readonly type?: StockMovementType;
+  readonly page?: number;
+  readonly size?: number;
+}
+export interface StockEntryCommand {
+  readonly partId: string;
+  readonly quantity: number;
+  readonly reason?: string;
+  readonly idempotencyKey: string;
+}
+
 export interface ExecutionGateway {
   consultarFila(query?: ConsultarFilaQuery): Promise<readonly FilaExecucao[]>;
   consultarExecucao(id: string): Promise<ExecutionDetails>;
@@ -52,6 +104,35 @@ export interface ExecutionGateway {
   iniciarReparo(command: ExecutionCommand): Promise<ExecutionDetails>;
   concluirReparo(command: ExecutionCommand): Promise<ExecutionDetails>;
   cancelar(command: ExecutionCommand): Promise<ExecutionDetails>;
+  consultarPecas(query?: StockQuery): Promise<Page<StockPart>>;
+  consultarSaldo(partId: string): Promise<StockBalance>;
+  consultarMovimentos(query: MovementQuery): Promise<Page<StockMovement>>;
+  registrarEntrada(command: StockEntryCommand): Promise<StockMovement>;
+}
+
+export class ListStockParts {
+  constructor(private readonly gateway: ExecutionGateway) {}
+  execute(query: StockQuery = {}): Promise<Page<StockPart>> {
+    return this.gateway.consultarPecas(query);
+  }
+}
+export class GetStockBalance {
+  constructor(private readonly gateway: ExecutionGateway) {}
+  execute(partId: string): Promise<StockBalance> {
+    return this.gateway.consultarSaldo(partId);
+  }
+}
+export class ListStockMovements {
+  constructor(private readonly gateway: ExecutionGateway) {}
+  execute(query: MovementQuery): Promise<Page<StockMovement>> {
+    return this.gateway.consultarMovimentos(query);
+  }
+}
+export class RegisterStockEntry {
+  constructor(private readonly gateway: ExecutionGateway) {}
+  execute(command: StockEntryCommand): Promise<StockMovement> {
+    return this.gateway.registrarEntrada(command);
+  }
 }
 
 export type ExecutionFailureReason =

@@ -92,6 +92,59 @@ const mockApi = async (page: Page, options: ApiOptions = {}): Promise<void> => {
       });
       return;
     }
+    if (url.pathname === '/api/v1/pecas') {
+      await route.fulfill({
+        json: {
+          items: [
+            {
+              pecaId: 'peca-1',
+              nome: 'Bateria 60Ah',
+              codigo: 'BAT-60',
+              valorUnitario: 320,
+              ativo: true,
+              criadoEm: '2026-01-01T00:00:00Z',
+              atualizadoEm: '2026-01-01T00:00:00Z',
+            },
+          ],
+          page: 0,
+          size: 20,
+          totalElements: 1,
+          totalPages: 1,
+        },
+      });
+      return;
+    }
+    if (url.pathname === '/api/v1/estoques/pecas/peca-1/saldo') {
+      await route.fulfill({
+        json: {
+          pecaId: 'peca-1',
+          quantidadeDisponivel: 4,
+          quantidadeReservada: 1,
+          atualizadoEm: '2026-01-01T00:00:00Z',
+          acoesPermitidas: ['REGISTRAR_ENTRADA'],
+        },
+      });
+      return;
+    }
+    if (url.pathname === '/api/v1/estoques/movimentos' && request.method() === 'GET') {
+      await route.fulfill({
+        json: { items: [], page: 0, size: 20, totalElements: 0, totalPages: 0 },
+      });
+      return;
+    }
+    if (url.pathname === '/api/v1/estoques/movimentos/entrada') {
+      await route.fulfill({
+        status: 201,
+        json: {
+          movimentoId: 'mov-1',
+          pecaId: 'peca-1',
+          tipo: 'ENTRADA',
+          quantidade: 2,
+          criadoEm: '2026-01-01T00:00:00Z',
+        },
+      });
+      return;
+    }
     await route.continue();
   });
 };
@@ -196,4 +249,18 @@ test('sessão expirada redireciona ao login após recarga', async ({ page }) => 
   await page.reload();
 
   await expect(page).toHaveURL(/\/login\?returnUrl=%2Fsession$/);
+});
+
+test('estoque consulta saldo e registra somente ação oferecida pela API', async ({ page }) => {
+  await mockApi(page, { roles: ['administrativo'] });
+  await login(page);
+  await page.getByRole('link', { name: 'Estoque' }).click();
+  await expect(page.getByRole('cell', { name: 'Bateria 60Ah' })).toBeVisible();
+  await page.getByRole('button', { name: 'Ver estoque' }).click();
+  await expect(page.getByTestId('stock-actions')).toHaveText('REGISTRAR_ENTRADA');
+  await expect(page.getByRole('heading', { name: 'Registrar entrada' })).toBeVisible();
+  await page.getByLabel('Quantidade').fill('2');
+  await page.getByRole('button', { name: 'Registrar entrada' }).click();
+  await expect(page.getByText('Disponível')).toBeVisible();
+  await expectNoAccessibilityViolations(page);
 });

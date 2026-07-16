@@ -13,11 +13,23 @@ import {
   type ExecutionFailureReason,
   type ExecutionGateway,
   type FilaExecucao,
+  type MovementQuery,
+  type Page,
+  type StockBalance,
+  type StockEntryCommand,
+  type StockMovement,
+  type StockPart,
+  type StockQuery,
 } from '../application';
 import type {
   ConsultarFilaExecucaoResponse,
   Execucao,
   FilaExecucaoItem,
+  MovimentoEstoque,
+  MovimentoEstoquePage,
+  Peca,
+  PecaPage,
+  SaldoEstoque,
 } from './generated/types.gen';
 
 const mapFila = (item: FilaExecucaoItem): FilaExecucao => ({
@@ -39,6 +51,36 @@ const mapExecution = (item: Execucao): ExecutionDetails => ({
   criadoEm: item.criadoEm,
   atualizadoEm: item.atualizadoEm,
   allowedActions: item.acoesPermitidas,
+});
+const mapPart = (item: Peca): StockPart => ({
+  id: item.pecaId,
+  name: item.nome,
+  code: item.codigo,
+  unitPrice: item.valorUnitario,
+  active: item.ativo,
+});
+const mapBalance = (item: SaldoEstoque): StockBalance => ({
+  partId: item.pecaId,
+  available: item.quantidadeDisponivel,
+  reserved: item.quantidadeReservada,
+  updatedAt: item.atualizadoEm,
+  allowedActions: item.acoesPermitidas,
+});
+const mapMovement = (item: MovimentoEstoque): StockMovement => ({
+  id: item.movimentoId,
+  partId: item.pecaId,
+  ...(item.ordemServicoId ? { workOrderId: item.ordemServicoId } : {}),
+  type: item.tipo,
+  quantity: item.quantidade,
+  ...(item.motivo ? { reason: item.motivo } : {}),
+  createdAt: item.criadoEm,
+});
+const mapPage = <T, R>(
+  page: { items: T[]; page: number; size: number; totalElements: number; totalPages: number },
+  mapper: (item: T) => R,
+): Page<R> => ({
+  ...page,
+  items: page.items.map(mapper),
 });
 
 @Injectable({ providedIn: 'root' })
@@ -102,6 +144,78 @@ export class ExecutionApiAdapter implements ExecutionGateway {
       'cancelamento',
       command.notes ? { motivo: command.notes } : {},
     );
+  }
+
+  async consultarPecas(query: StockQuery = {}): Promise<Page<StockPart>> {
+    let params = new HttpParams()
+      .set('page', String(query.page ?? 0))
+      .set('size', String(query.size ?? 20));
+    if (query.name) params = params.set('nome', query.name);
+    if (query.code) params = params.set('codigo', query.code);
+    try {
+      return mapPage(
+        await firstValueFrom(
+          this.http.get<PecaPage>(`${this.config.apiBaseUrl}/pecas`, { params }),
+        ),
+        mapPart,
+      );
+    } catch (error: unknown) {
+      throw this.executionError(error);
+    }
+  }
+
+  async consultarSaldo(partId: string): Promise<StockBalance> {
+    try {
+      return mapBalance(
+        await firstValueFrom(
+          this.http.get<SaldoEstoque>(
+            `${this.config.apiBaseUrl}/estoques/pecas/${encodeURIComponent(partId)}/saldo`,
+          ),
+        ),
+      );
+    } catch (error: unknown) {
+      throw this.executionError(error);
+    }
+  }
+
+  async consultarMovimentos(query: MovementQuery): Promise<Page<StockMovement>> {
+    let params = new HttpParams()
+      .set('pecaId', query.partId)
+      .set('page', String(query.page ?? 0))
+      .set('size', String(query.size ?? 20));
+    if (query.type) params = params.set('tipo', query.type);
+    try {
+      return mapPage(
+        await firstValueFrom(
+          this.http.get<MovimentoEstoquePage>(`${this.config.apiBaseUrl}/estoques/movimentos`, {
+            params,
+          }),
+        ),
+        mapMovement,
+      );
+    } catch (error: unknown) {
+      throw this.executionError(error);
+    }
+  }
+
+  async registrarEntrada(command: StockEntryCommand): Promise<StockMovement> {
+    try {
+      return mapMovement(
+        await firstValueFrom(
+          this.http.post<MovimentoEstoque>(
+            `${this.config.apiBaseUrl}/estoques/movimentos/entrada`,
+            {
+              pecaId: command.partId,
+              quantidade: command.quantity,
+              ...(command.reason ? { motivo: command.reason } : {}),
+            },
+            { context: idempotentCommandContext(command.idempotencyKey) },
+          ),
+        ),
+      );
+    } catch (error: unknown) {
+      throw this.executionError(error);
+    }
   }
 
   private async executeCommand(
