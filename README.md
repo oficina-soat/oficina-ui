@@ -60,6 +60,7 @@ flowchart LR
 - [Wireframes](docs/wireframes.md)
 - [Acessibilidade](docs/accessibility.md)
 - [Segurança](docs/security.md)
+- [Integração contínua](docs/continuous-integration.md)
 - [Deploy no lab](docs/deployment.md)
 - [Como contribuir](CONTRIBUTING.md)
 - [Roadmap normativo](https://github.com/oficina-soat/oficina-platform/blob/main/docs/frontend/roadmap.md)

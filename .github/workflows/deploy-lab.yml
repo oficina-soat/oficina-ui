@@ -24,25 +24,22 @@ env:
   UI_AUTH_BASE_URL: ${{ vars.UI_AUTH_BASE_URL }}
 
 jobs:
+  quality-gate:
+    permissions:
+      contents: read
+    uses: ./.github/workflows/ci.yml
+
   deploy:
+    needs: quality-gate
     runs-on: ubuntu-latest
     permissions:
       contents: read
     steps:
-      - name: Checkout UI
-        uses: actions/checkout@v6
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
+      - name: Download validated production build
+        uses: actions/download-artifact@v7
         with:
-          node-version-file: .node-version
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Validate and build
-        run: npm run validate
+          name: oficina-ui-production-${{ github.sha }}
+          path: dist/oficina-ui/browser
 
       - name: Checkout optional infrastructure
         uses: actions/checkout@v6

@@ -16,7 +16,8 @@ O pipeline lê `bucket_name`, `cloudfront_distribution_id` e `ui_url` diretament
 
 ## Política de publicação
 
-- `npm ci` garante instalação reproduzível e `npm run validate` bloqueia o deploy quando algum gate falha;
+- o workflow reutilizável [UI Quality Gate](continuous-integration.md) executa instalação reproduzível, validações e E2E; qualquer falha bloqueia o deploy;
+- o deploy baixa exatamente o artefato produzido pelo Quality Gate, sem recompilar a aplicação;
 - artefatos com hash recebem cache de um ano e `immutable`;
 - `index.html`, `config/runtime-config.json` e `deploy-metadata.json` não são armazenados em cache;
 - somente caminhos mutáveis são invalidados no CloudFront;
