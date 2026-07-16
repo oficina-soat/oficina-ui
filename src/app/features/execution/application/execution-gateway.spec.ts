@@ -6,6 +6,7 @@ import {
   CompleteRepair,
   GetExecution,
   ListExecutionQueue,
+  ListCatalogServices,
   GetStockBalance,
   ListStockMovements,
   ListStockParts,
@@ -16,6 +17,13 @@ import {
 } from './execution-gateway';
 
 const gateway = (): ExecutionGateway => ({
+  consultarServicos: vi.fn().mockResolvedValue({
+    items: [],
+    page: 0,
+    size: 20,
+    totalElements: 0,
+    totalPages: 0,
+  }),
   consultarFila: vi.fn().mockResolvedValue([]),
   consultarExecucao: vi.fn().mockResolvedValue({ id: 'execucao-1' }),
   iniciarDiagnostico: vi.fn().mockResolvedValue({ id: 'execucao-1' }),
@@ -56,6 +64,13 @@ describe('casos de uso de execução', () => {
     expect(execution.consultarSaldo).toHaveBeenCalledWith('peca-1');
     expect(execution.consultarMovimentos).toHaveBeenCalledWith(movementQuery);
     expect(execution.registrarEntrada).toHaveBeenCalledWith(command);
+  });
+
+  it('delega a pesquisa do catálogo ativo sem aplicar regra local', async () => {
+    const execution = gateway();
+    const query = { name: 'revisão', page: 0, size: 50 };
+    await new ListCatalogServices(execution).execute(query);
+    expect(execution.consultarServicos).toHaveBeenCalledWith(query);
   });
 
   it('delega cada comando integralmente ao gateway', async () => {

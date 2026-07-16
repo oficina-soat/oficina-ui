@@ -1,4 +1,4 @@
-import { DatePipe } from '@angular/common';
+import { CurrencyPipe, DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, signal, type OnInit } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -6,12 +6,20 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Alert, Confirmation, DataTable, FormField, Loading } from '../../../../shared/ui';
 import type { WorkOrderHistoryEntry, WorkOrderState, WorkOrderSummary } from '../../application';
 import {
+  ADD_WORK_ORDER_PART,
+  ADD_WORK_ORDER_SERVICE,
   CANCEL_WORK_ORDER,
   CHANGE_WORK_ORDER_STATE,
   GET_WORK_ORDER,
   GET_WORK_ORDER_HISTORY,
   WorkOrderOperationError,
 } from '../../public-api';
+import {
+  LIST_CATALOG_SERVICES,
+  LIST_STOCK_PARTS,
+  type CatalogService,
+  type StockPart,
+} from '../../../execution/public-api';
 import { workOrderStateLabels } from './work-orders';
 
 const commandMessages = {
@@ -28,6 +36,7 @@ const commandMessages = {
   imports: [
     Alert,
     Confirmation,
+    CurrencyPipe,
     DataTable,
     DatePipe,
     FormField,
@@ -71,6 +80,146 @@ const commandMessages = {
             <dd>{{ item.createdAt | date: 'dd/MM/yyyy HH:mm:ss' }}</dd>
           </div>
         </dl>
+
+        <section aria-labelledby="composition-title">
+          <h2 id="composition-title">Composição técnica</h2>
+          <h3>Serviços</h3>
+          @if (item.services.length === 0) {
+            <p>Nenhum serviço incluído.</p>
+          } @else {
+            <app-data-table label="Serviços da ordem de serviço">
+              <table>
+                <thead>
+                  <tr>
+                    <th scope="col">Serviço</th>
+                    <th scope="col">Quantidade</th>
+                    <th scope="col">Valor unitário</th>
+                    <th scope="col">Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (service of item.services; track service.serviceId) {
+                    <tr>
+                      <td>{{ service.name }}</td>
+                      <td>{{ service.quantity }}</td>
+                      <td>{{ service.unitPrice | currency: 'BRL' }}</td>
+                      <td>{{ service.totalPrice | currency: 'BRL' }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </app-data-table>
+          }
+          <h3>Peças</h3>
+          @if (item.parts.length === 0) {
+            <p>Nenhuma peça incluída.</p>
+          } @else {
+            <app-data-table label="Peças da ordem de serviço">
+              <table>
+                <thead>
+                  <tr>
+                    <th scope="col">Peça</th>
+                    <th scope="col">Quantidade</th>
+                    <th scope="col">Valor unitário</th>
+                    <th scope="col">Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (part of item.parts; track part.partId) {
+                    <tr>
+                      <td>{{ part.name }}</td>
+                      <td>{{ part.quantity }}</td>
+                      <td>{{ part.unitPrice | currency: 'BRL' }}</td>
+                      <td>{{ part.totalPrice | currency: 'BRL' }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </app-data-table>
+          }
+        </section>
+
+        @if (item.allowedActions.includes('INCLUIR_SERVICO')) {
+          <section class="item-action" aria-labelledby="service-title">
+            <h2 id="service-title">Incluir serviço</h2>
+            <form [formGroup]="serviceForm" (ngSubmit)="addService()">
+              <app-form-field inputId="service-search" label="Pesquisar serviço">
+                <input id="service-search" formControlName="search" />
+              </app-form-field>
+              <button
+                class="ui-button"
+                type="button"
+                (click)="searchServices()"
+                [disabled]="catalogLoading()"
+              >
+                Pesquisar
+              </button>
+              <app-form-field inputId="service-id" label="Serviço" [required]="true">
+                <select id="service-id" formControlName="itemId">
+                  <option value="">Selecione</option>
+                  @for (service of services(); track service.id) {
+                    <option [value]="service.id">
+                      {{ service.name }} — {{ service.basePrice | currency: 'BRL' }}
+                    </option>
+                  }
+                </select>
+              </app-form-field>
+              <app-form-field inputId="service-quantity" label="Quantidade" [required]="true">
+                <input
+                  id="service-quantity"
+                  type="number"
+                  min="0.001"
+                  step="0.001"
+                  formControlName="quantity"
+                />
+              </app-form-field>
+              <button class="ui-button ui-button--primary" type="submit" [disabled]="saving()">
+                Incluir serviço
+              </button>
+            </form>
+          </section>
+        }
+
+        @if (item.allowedActions.includes('INCLUIR_PECA')) {
+          <section class="item-action" aria-labelledby="part-title">
+            <h2 id="part-title">Incluir peça</h2>
+            <form [formGroup]="partForm" (ngSubmit)="addPart()">
+              <app-form-field inputId="part-search" label="Pesquisar peça">
+                <input id="part-search" formControlName="search" />
+              </app-form-field>
+              <button
+                class="ui-button"
+                type="button"
+                (click)="searchParts()"
+                [disabled]="catalogLoading()"
+              >
+                Pesquisar
+              </button>
+              <app-form-field inputId="part-id" label="Peça" [required]="true">
+                <select id="part-id" formControlName="itemId">
+                  <option value="">Selecione</option>
+                  @for (part of parts(); track part.id) {
+                    <option [value]="part.id">
+                      {{ part.name }} — {{ part.unitPrice | currency: 'BRL' }}
+                    </option>
+                  }
+                </select>
+              </app-form-field>
+              <app-form-field inputId="part-quantity" label="Quantidade" [required]="true">
+                <input
+                  id="part-quantity"
+                  type="number"
+                  min="0.001"
+                  step="0.001"
+                  formControlName="quantity"
+                />
+              </app-form-field>
+              <button class="ui-button ui-button--primary" type="submit" [disabled]="saving()">
+                Incluir peça
+              </button>
+            </form>
+          </section>
+        }
 
         <section aria-labelledby="history-title">
           <h2 id="history-title">Histórico</h2>
@@ -168,7 +317,8 @@ const commandMessages = {
       gap: var(--space-6);
     }
     dl,
-    .actions {
+    .actions,
+    .item-action {
       display: grid;
       gap: var(--space-4);
       padding: var(--space-6);
@@ -213,6 +363,10 @@ export class WorkOrderDetail implements OnInit {
   private readonly getHistory = inject(GET_WORK_ORDER_HISTORY);
   private readonly change = inject(CHANGE_WORK_ORDER_STATE);
   private readonly cancelOrder = inject(CANCEL_WORK_ORDER);
+  private readonly addServiceCommand = inject(ADD_WORK_ORDER_SERVICE);
+  private readonly addPartCommand = inject(ADD_WORK_ORDER_PART);
+  private readonly listServices = inject(LIST_CATALOG_SERVICES);
+  private readonly listParts = inject(LIST_STOCK_PARTS);
   private readonly id = inject(ActivatedRoute).snapshot.paramMap.get('ordemServicoId');
   protected readonly order = signal<WorkOrderSummary | null>(null);
   protected readonly history = signal<readonly WorkOrderHistoryEntry[]>([]);
@@ -220,6 +374,9 @@ export class WorkOrderDetail implements OnInit {
   protected readonly saving = signal(false);
   protected readonly failure = signal<string | null>(null);
   protected readonly success = signal<string | null>(null);
+  protected readonly services = signal<readonly CatalogService[]>([]);
+  protected readonly parts = signal<readonly StockPart[]>([]);
+  protected readonly catalogLoading = signal(false);
   protected readonly confirmingCancel = signal(false);
   protected readonly states = Object.entries(workOrderStateLabels) as readonly [
     WorkOrderState,
@@ -233,6 +390,8 @@ export class WorkOrderDetail implements OnInit {
     reason: new FormControl('', { nonNullable: true }),
   });
   readonly cancelReason = new FormControl('', { nonNullable: true });
+  readonly serviceForm = this.itemForm();
+  readonly partForm = this.itemForm();
 
   ngOnInit(): void {
     void this.load();
@@ -291,10 +450,95 @@ export class WorkOrderDetail implements OnInit {
       ]);
       this.order.set(order);
       this.history.set(history);
+      const catalogLoads: Promise<void>[] = [];
+      if (order.allowedActions.includes('INCLUIR_SERVICO'))
+        catalogLoads.push(this.searchServices());
+      if (order.allowedActions.includes('INCLUIR_PECA')) catalogLoads.push(this.searchParts());
+      await Promise.all(catalogLoads);
     } catch (error: unknown) {
       this.report(error);
     } finally {
       this.loading.set(false);
+    }
+  }
+
+  protected async searchServices(): Promise<void> {
+    await this.loadCatalog(async () => {
+      const name = this.serviceForm.controls.search.value.trim();
+      const page = await this.listServices.execute({ size: 50, ...(name ? { name } : {}) });
+      this.services.set(page.items);
+    });
+  }
+
+  protected async searchParts(): Promise<void> {
+    await this.loadCatalog(async () => {
+      const name = this.partForm.controls.search.value.trim();
+      const page = await this.listParts.execute({
+        active: true,
+        size: 50,
+        ...(name ? { name } : {}),
+      });
+      this.parts.set(page.items);
+    });
+  }
+
+  protected async addService(): Promise<void> {
+    const id = this.id;
+    if (!id || this.serviceForm.invalid) return this.serviceForm.markAllAsTouched();
+    await this.execute(async () => {
+      this.order.set(
+        await this.addServiceCommand.execute({
+          id,
+          serviceId: this.serviceForm.controls.itemId.value,
+          quantity: this.serviceForm.controls.quantity.value,
+          idempotencyKey: crypto.randomUUID(),
+        }),
+      );
+      this.serviceForm.patchValue({ itemId: '', quantity: 1 });
+      this.success.set('Serviço incluído conforme resposta da API.');
+    });
+  }
+
+  protected async addPart(): Promise<void> {
+    const id = this.id;
+    if (!id || this.partForm.invalid) return this.partForm.markAllAsTouched();
+    await this.execute(async () => {
+      this.order.set(
+        await this.addPartCommand.execute({
+          id,
+          partId: this.partForm.controls.itemId.value,
+          quantity: this.partForm.controls.quantity.value,
+          idempotencyKey: crypto.randomUUID(),
+        }),
+      );
+      this.partForm.patchValue({ itemId: '', quantity: 1 });
+      this.success.set('Peça incluída conforme resposta da API.');
+    });
+  }
+
+  private itemForm(): FormGroup<{
+    search: FormControl<string>;
+    itemId: FormControl<string>;
+    quantity: FormControl<number>;
+  }> {
+    return new FormGroup({
+      search: new FormControl('', { nonNullable: true }),
+      itemId: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+      quantity: new FormControl(1, {
+        nonNullable: true,
+        validators: [Validators.required, Validators.min(0.001)],
+      }),
+    });
+  }
+
+  private async loadCatalog(load: () => Promise<void>): Promise<void> {
+    this.catalogLoading.set(true);
+    try {
+      await load();
+    } catch (error: unknown) {
+      this.report(error);
+    } finally {
+      this.catalogLoading.set(false);
     }
   }
 

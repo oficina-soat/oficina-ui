@@ -80,12 +80,40 @@ export type OrdemServicoCreateRequest = {
 export type OrdemServico = OrdemServicoCreateRequest & {
     ordemServicoId: string;
     estado: EstadoOrdemServico;
+    servicos: Array<ItemServicoOrdemServico>;
+    pecas: Array<ItemPecaOrdemServico>;
     criadoEm: string;
     atualizadoEm: string;
     acoesPermitidas: Array<AcaoPermitidaOrdemServico>;
 };
 
-export type AcaoPermitidaOrdemServico = 'INICIAR_DIAGNOSTICO' | 'CONCLUIR_DIAGNOSTICO' | 'RETOMAR_DIAGNOSTICO' | 'INICIAR_EXECUCAO' | 'FINALIZAR' | 'ENTREGAR' | 'CANCELAR';
+export type AcaoPermitidaOrdemServico = 'INICIAR_DIAGNOSTICO' | 'INCLUIR_SERVICO' | 'INCLUIR_PECA' | 'CONCLUIR_DIAGNOSTICO' | 'RETOMAR_DIAGNOSTICO' | 'INICIAR_EXECUCAO' | 'FINALIZAR' | 'ENTREGAR' | 'CANCELAR';
+
+export type IncluirServicoOrdemServicoRequest = {
+    servicoId: string;
+    quantidade: number;
+};
+
+export type IncluirPecaOrdemServicoRequest = {
+    pecaId: string;
+    quantidade: number;
+};
+
+export type ItemServicoOrdemServico = {
+    servicoId: string;
+    nome: string;
+    quantidade: number;
+    valorUnitario: number;
+    valorTotal: number;
+};
+
+export type ItemPecaOrdemServico = {
+    pecaId: string;
+    nome: string;
+    quantidade: number;
+    valorUnitario: number;
+    valorTotal: number;
+};
 
 export type EstadoOrdemServico = 'RECEBIDA' | 'EM_DIAGNOSTICO' | 'AGUARDANDO_APROVACAO' | 'EM_EXECUCAO' | 'FINALIZADA' | 'ENTREGUE';
 
@@ -877,6 +905,112 @@ export type ConsultarHistoricoOrdemServicoResponses = {
 };
 
 export type ConsultarHistoricoOrdemServicoResponse = ConsultarHistoricoOrdemServicoResponses[keyof ConsultarHistoricoOrdemServicoResponses];
+
+export type IncluirServicoNaOrdemServicoData = {
+    body: IncluirServicoOrdemServicoRequest;
+    headers: {
+        /**
+         * Identificador de correlacao aceito do cliente e propagado em chamadas HTTP, eventos, logs e traces, conforme contracts/error-model.md.
+         */
+        'X-Correlation-Id'?: string;
+        /**
+         * Chave obrigatoria neste servico para retries seguros em operacoes POST ou PATCH com efeito colateral, conforme contracts/idempotency.md.
+         */
+        'X-Idempotency-Key': string;
+    };
+    path: {
+        ordemServicoId: string;
+    };
+    query?: never;
+    url: '/ordens-servico/{ordemServicoId}/servicos';
+};
+
+export type IncluirServicoNaOrdemServicoErrors = {
+    /**
+     * Requisicao invalida.
+     */
+    400: ErrorResponse;
+    /**
+     * Token JWT ausente, invalido ou expirado.
+     */
+    401: ErrorResponse;
+    /**
+     * Recurso nao encontrado.
+     */
+    404: ErrorResponse;
+    /**
+     * Conflito de estado, duplicidade ou idempotencia.
+     */
+    409: ErrorResponse;
+    /**
+     * Dependencia necessaria para concluir a operacao esta indisponivel.
+     */
+    503: ErrorResponse;
+};
+
+export type IncluirServicoNaOrdemServicoError = IncluirServicoNaOrdemServicoErrors[keyof IncluirServicoNaOrdemServicoErrors];
+
+export type IncluirServicoNaOrdemServicoResponses = {
+    /**
+     * Servico incluido e composicao atualizada.
+     */
+    200: OrdemServico;
+};
+
+export type IncluirServicoNaOrdemServicoResponse = IncluirServicoNaOrdemServicoResponses[keyof IncluirServicoNaOrdemServicoResponses];
+
+export type IncluirPecaNaOrdemServicoData = {
+    body: IncluirPecaOrdemServicoRequest;
+    headers: {
+        /**
+         * Identificador de correlacao aceito do cliente e propagado em chamadas HTTP, eventos, logs e traces, conforme contracts/error-model.md.
+         */
+        'X-Correlation-Id'?: string;
+        /**
+         * Chave obrigatoria neste servico para retries seguros em operacoes POST ou PATCH com efeito colateral, conforme contracts/idempotency.md.
+         */
+        'X-Idempotency-Key': string;
+    };
+    path: {
+        ordemServicoId: string;
+    };
+    query?: never;
+    url: '/ordens-servico/{ordemServicoId}/pecas';
+};
+
+export type IncluirPecaNaOrdemServicoErrors = {
+    /**
+     * Requisicao invalida.
+     */
+    400: ErrorResponse;
+    /**
+     * Token JWT ausente, invalido ou expirado.
+     */
+    401: ErrorResponse;
+    /**
+     * Recurso nao encontrado.
+     */
+    404: ErrorResponse;
+    /**
+     * Conflito de estado, duplicidade ou idempotencia.
+     */
+    409: ErrorResponse;
+    /**
+     * Dependencia necessaria para concluir a operacao esta indisponivel.
+     */
+    503: ErrorResponse;
+};
+
+export type IncluirPecaNaOrdemServicoError = IncluirPecaNaOrdemServicoErrors[keyof IncluirPecaNaOrdemServicoErrors];
+
+export type IncluirPecaNaOrdemServicoResponses = {
+    /**
+     * Peca incluida e composicao atualizada.
+     */
+    200: OrdemServico;
+};
+
+export type IncluirPecaNaOrdemServicoResponse = IncluirPecaNaOrdemServicoResponses[keyof IncluirPecaNaOrdemServicoResponses];
 
 export type AlterarEstadoOrdemServicoData = {
     body: AlterarEstadoRequest;

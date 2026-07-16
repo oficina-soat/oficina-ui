@@ -147,6 +147,11 @@ export type ErrorDetail = {
 export type NomeFilter = string;
 
 /**
+ * Quando informado, retorna somente itens com a situação de atividade solicitada.
+ */
+export type AtivoFilter = boolean;
+
+/**
  * Índice da página, iniciado em zero.
  */
 export type Page = number;
@@ -188,6 +193,10 @@ export type ConsultarServicosData = {
          * Trecho do nome sem distinção entre maiúsculas e minúsculas.
          */
         nome?: string;
+        /**
+         * Quando informado, retorna somente itens com a situação de atividade solicitada.
+         */
+        ativo?: boolean;
         /**
          * Índice da página, iniciado em zero.
          */
@@ -357,6 +366,10 @@ export type ConsultarPecasData = {
          * Trecho do nome sem distinção entre maiúsculas e minúsculas.
          */
         nome?: string;
+        /**
+         * Quando informado, retorna somente itens com a situação de atividade solicitada.
+         */
+        ativo?: boolean;
         codigo?: string;
         /**
          * Índice da página, iniciado em zero.

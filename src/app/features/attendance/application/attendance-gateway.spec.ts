@@ -1,7 +1,14 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import type { AttendanceGateway } from './attendance-gateway';
-import { CreateClient, CreateVehicle, ListClients, LoadClientVehicles } from './attendance-gateway';
+import {
+  AddWorkOrderPart,
+  AddWorkOrderService,
+  CreateClient,
+  CreateVehicle,
+  ListClients,
+  LoadClientVehicles,
+} from './attendance-gateway';
 
 const gateway = (): AttendanceGateway => ({
   consultarClientes: vi.fn().mockResolvedValue({
@@ -64,6 +71,8 @@ const gateway = (): AttendanceGateway => ({
     createdAt: '2026-07-15T12:00:00Z',
     updatedAt: '2026-07-15T12:00:00Z',
   }),
+  incluirServicoOrdemServico: vi.fn(),
+  incluirPecaOrdemServico: vi.fn(),
 });
 
 describe('casos de uso de clientes', () => {
@@ -104,5 +113,15 @@ describe('casos de uso de clientes', () => {
     };
     await new CreateVehicle(attendance).execute(command);
     expect(attendance.criarVeiculo).toHaveBeenCalledWith(command);
+  });
+
+  it('delega inclusões da composição sem calcular snapshots ou totais', async () => {
+    const attendance = gateway();
+    const service = { id: 'os-1', serviceId: 'servico-1', quantity: 1.5, idempotencyKey: 'key-1' };
+    const part = { id: 'os-1', partId: 'peca-1', quantity: 2, idempotencyKey: 'key-2' };
+    await new AddWorkOrderService(attendance).execute(service);
+    await new AddWorkOrderPart(attendance).execute(part);
+    expect(attendance.incluirServicoOrdemServico).toHaveBeenCalledWith(service);
+    expect(attendance.incluirPecaOrdemServico).toHaveBeenCalledWith(part);
   });
 });

@@ -9,6 +9,8 @@ export {
   GET_WORK_ORDER_HISTORY,
   CHANGE_WORK_ORDER_STATE,
   CANCEL_WORK_ORDER,
+  ADD_WORK_ORDER_SERVICE,
+  ADD_WORK_ORDER_PART,
 } from './attendance.providers';
 export {
   ClientOperationError,
@@ -19,4 +21,6 @@ export {
   type WorkOrderFailureReason,
   type WorkOrderSummary,
   type WorkOrderHistoryEntry,
+  type WorkOrderServiceItem,
+  type WorkOrderPartItem,
 } from './application';
