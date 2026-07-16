@@ -98,7 +98,7 @@ jobs:
           RESOLVED_TF_STATE_DYNAMODB_TABLE: ${{ steps.backend.outputs.dynamodb_table }}
           RESOLVED_UI_AUTH_BASE_URL: ${{ steps.runtime.outputs.auth_base_url }}
           TF_VAR_region: ${{ vars.AWS_REGION || 'us-east-1' }}
-          TF_VAR_connect_src_origins: ${{ vars.UI_CONNECT_SRC_ORIGINS }}
+          UI_CONNECT_SRC_ORIGINS_OVERRIDE: ${{ vars.UI_CONNECT_SRC_ORIGINS }}
         shell: bash
         run: |
           set -euo pipefail
@@ -110,11 +110,9 @@ jobs:
           if [[ -n "${RESOLVED_TF_STATE_DYNAMODB_TABLE:-}" ]]; then
             args+=("-backend-config=dynamodb_table=${RESOLVED_TF_STATE_DYNAMODB_TABLE}")
           fi
+          TF_VAR_connect_src_origins="${UI_CONNECT_SRC_ORIGINS_OVERRIDE:-$(jq -cn --arg origin "${RESOLVED_UI_AUTH_BASE_URL}" '[$origin]')}"
+          export TF_VAR_connect_src_origins
           terraform init -input=false "${args[@]}"
-          if [[ -z "${TF_VAR_connect_src_origins:-}" ]]; then
-            TF_VAR_connect_src_origins="$(jq -cn --arg origin "${RESOLVED_UI_AUTH_BASE_URL}" '[$origin]')"
-            export TF_VAR_connect_src_origins
-          fi
           terraform apply -input=false -auto-approve
           bucket="$(terraform output -raw bucket_name)"
           distribution="$(terraform output -raw cloudfront_distribution_id)"
