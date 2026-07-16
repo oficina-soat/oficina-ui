@@ -20,7 +20,6 @@ export type UsuarioUpdateRequest = {
      * CPF da pessoa física, sem formatação.
      */
     documento: string;
-    status: StatusUsuario;
     papeis: Array<PapelUsuario>;
 };
 
@@ -32,6 +31,7 @@ export type Usuario = {
     tipoPessoa: 'FISICA';
     status: StatusUsuario;
     papeis: Array<PapelUsuario>;
+    acoesPermitidas: Array<AcaoPermitidaUsuario>;
     criadoEm: string;
     atualizadoEm: string;
 };
@@ -39,6 +39,8 @@ export type Usuario = {
 export type StatusUsuario = 'ATIVO' | 'INATIVO' | 'BLOQUEADO';
 
 export type PapelUsuario = 'administrativo' | 'mecanico' | 'recepcionista';
+
+export type AcaoPermitidaUsuario = 'ATUALIZAR_DADOS' | 'BLOQUEAR' | 'REATIVAR' | 'INATIVAR';
 
 export type ClienteCreateRequest = {
     nome: string;
@@ -210,9 +212,13 @@ export type ConsultarUsuariosData = {
          */
         documento?: string;
         /**
-         * Trecho do e-mail, sem distinção entre maiúsculas e minúsculas.
+         * Estado operacional canônico.
          */
-        email?: string;
+        status?: StatusUsuario;
+        /**
+         * Papel operacional canônico.
+         */
+        papel?: PapelUsuario;
     };
     url: '/usuarios';
 };
@@ -412,12 +418,106 @@ export type AtualizarUsuarioError = AtualizarUsuarioErrors[keyof AtualizarUsuari
 
 export type AtualizarUsuarioResponses = {
     /**
-     * Usuário operacional atualizado.
+     * Dados do usuário operacional atualizados.
      */
     200: Usuario;
 };
 
 export type AtualizarUsuarioResponse = AtualizarUsuarioResponses[keyof AtualizarUsuarioResponses];
+
+export type BloquearUsuarioData = {
+    body?: never;
+    headers: {
+        /**
+         * Identificador de correlacao aceito do cliente e propagado em chamadas HTTP, eventos, logs e traces, conforme contracts/error-model.md.
+         */
+        'X-Correlation-Id'?: string;
+        /**
+         * Chave obrigatoria neste servico para retries seguros em operacoes POST ou PATCH com efeito colateral, conforme contracts/idempotency.md.
+         */
+        'X-Idempotency-Key': string;
+    };
+    path: {
+        usuarioId: string;
+    };
+    query?: never;
+    url: '/usuarios/{usuarioId}/bloqueio';
+};
+
+export type BloquearUsuarioErrors = {
+    /**
+     * Token JWT ausente, invalido ou expirado.
+     */
+    401: ErrorResponse;
+    /**
+     * Token JWT válido sem o papel administrativo exigido pela operação.
+     */
+    403: ErrorResponse;
+    /**
+     * Recurso nao encontrado.
+     */
+    404: ErrorResponse;
+    /**
+     * Conflito de estado, duplicidade ou idempotencia.
+     */
+    409: ErrorResponse;
+};
+
+export type BloquearUsuarioError = BloquearUsuarioErrors[keyof BloquearUsuarioErrors];
+
+export type BloquearUsuarioResponses = {
+    /**
+     * Usuário bloqueado ou representação atual quando já estava bloqueado.
+     */
+    200: Usuario;
+};
+
+export type BloquearUsuarioResponse = BloquearUsuarioResponses[keyof BloquearUsuarioResponses];
+
+export type ReativarUsuarioData = {
+    body?: never;
+    headers: {
+        /**
+         * Identificador de correlacao aceito do cliente e propagado em chamadas HTTP, eventos, logs e traces, conforme contracts/error-model.md.
+         */
+        'X-Correlation-Id'?: string;
+        /**
+         * Chave obrigatoria neste servico para retries seguros em operacoes POST ou PATCH com efeito colateral, conforme contracts/idempotency.md.
+         */
+        'X-Idempotency-Key': string;
+    };
+    path: {
+        usuarioId: string;
+    };
+    query?: never;
+    url: '/usuarios/{usuarioId}/reativacao';
+};
+
+export type ReativarUsuarioErrors = {
+    /**
+     * Token JWT ausente, invalido ou expirado.
+     */
+    401: ErrorResponse;
+    /**
+     * Token JWT válido sem o papel administrativo exigido pela operação.
+     */
+    403: ErrorResponse;
+    /**
+     * Recurso nao encontrado.
+     */
+    404: ErrorResponse;
+};
+
+export type ReativarUsuarioError = ReativarUsuarioErrors[keyof ReativarUsuarioErrors];
+
+export type ReativarUsuarioResponses = {
+    /**
+     * Usuário ativo ou representação atual quando já estava ativo.
+     */
+    200: Usuario;
+};
+
+export type ReativarUsuarioResponse = ReativarUsuarioResponses[keyof ReativarUsuarioResponses];
 
 export type ConsultarClientesData = {
     body?: never;

@@ -31,6 +31,12 @@ export type AtivacaoRequest = {
     password: string;
 };
 
+export type CredencialStatusResponse = {
+    status: 'NAO_ATIVADA' | 'ATIVACAO_PENDENTE' | 'ATIVA';
+    expiresAt?: string;
+    acoesPermitidas: Array<'SOLICITAR_ATIVACAO'>;
+};
+
 export type AuthError = {
     message: string;
     motivo: string;
@@ -163,6 +169,50 @@ export type SolicitarAtivacaoCredencialResponses = {
 };
 
 export type SolicitarAtivacaoCredencialResponse = SolicitarAtivacaoCredencialResponses[keyof SolicitarAtivacaoCredencialResponses];
+
+export type ConsultarCredencialData = {
+    body?: never;
+    headers?: {
+        /**
+         * Identificador propagado para resposta, logs e traces.
+         */
+        'X-Correlation-Id'?: string;
+    };
+    path: {
+        /**
+         * UUID canônico do usuário operacional no oficina-os-service.
+         */
+        usuarioId: string;
+    };
+    query?: never;
+    url: '/auth/usuarios/{usuarioId}/credencial';
+};
+
+export type ConsultarCredencialErrors = {
+    /**
+     * Credenciais ausentes, inválidas ou usuário não autorizado a autenticar.
+     */
+    401: AuthError;
+    /**
+     * JWT válido sem o papel administrativo.
+     */
+    403: AuthError;
+    /**
+     * Usuário operacional ainda não projetado no store de autenticação.
+     */
+    404: AuthError;
+};
+
+export type ConsultarCredencialError = ConsultarCredencialErrors[keyof ConsultarCredencialErrors];
+
+export type ConsultarCredencialResponses = {
+    /**
+     * Estado administrativo da credencial.
+     */
+    200: CredencialStatusResponse;
+};
+
+export type ConsultarCredencialResponse = ConsultarCredencialResponses[keyof ConsultarCredencialResponses];
 
 export type AtivarCredencialData = {
     body: AtivacaoRequest;
