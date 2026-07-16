@@ -89,13 +89,16 @@ jobs:
             echo "auth_base_url=${UI_AUTH_BASE_URL:-${endpoint%/}}"
           } >> "${GITHUB_OUTPUT}"
 
-      - name: Read isolated hosting outputs
+      - name: Ensure hosting and read outputs
         id: hosting
         working-directory: infrastructure/terraform/optional/ui-hosting/lab
         env:
           RESOLVED_TF_STATE_BUCKET: ${{ steps.backend.outputs.bucket }}
           RESOLVED_TF_STATE_REGION: ${{ steps.backend.outputs.region }}
           RESOLVED_TF_STATE_DYNAMODB_TABLE: ${{ steps.backend.outputs.dynamodb_table }}
+          RESOLVED_UI_AUTH_BASE_URL: ${{ steps.runtime.outputs.auth_base_url }}
+          TF_VAR_region: ${{ vars.AWS_REGION || 'us-east-1' }}
+          TF_VAR_connect_src_origins: ${{ vars.UI_CONNECT_SRC_ORIGINS }}
         shell: bash
         run: |
           set -euo pipefail
@@ -108,11 +111,16 @@ jobs:
             args+=("-backend-config=dynamodb_table=${RESOLVED_TF_STATE_DYNAMODB_TABLE}")
           fi
           terraform init -input=false "${args[@]}"
+          if [[ -z "${TF_VAR_connect_src_origins:-}" ]]; then
+            TF_VAR_connect_src_origins="$(jq -cn --arg origin "${RESOLVED_UI_AUTH_BASE_URL}" '[$origin]')"
+            export TF_VAR_connect_src_origins
+          fi
+          terraform apply -input=false -auto-approve
           bucket="$(terraform output -raw bucket_name)"
           distribution="$(terraform output -raw cloudfront_distribution_id)"
           url="$(terraform output -raw ui_url)"
           if [[ -z "${bucket}" || -z "${distribution}" || -z "${url}" ]]; then
-            echo "A hospedagem opcional não está aplicada. Execute UI Hosting Lab com action=apply no oficina-infra." >&2
+            echo "A hospedagem opcional não retornou os outputs obrigatórios após o apply." >&2
             exit 1
           fi
           {
