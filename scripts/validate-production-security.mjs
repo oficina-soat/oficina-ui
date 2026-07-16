@@ -29,6 +29,18 @@ const walk = async (directory) => {
 };
 await walk(buildRoot);
 
+const indexHtml = await readFile(join(buildRoot, 'index.html'), 'utf8');
+if (/\son[a-z]+\s*=/i.test(indexHtml)) {
+  violations.push(
+    'index.html não pode conter event handlers inline, pois são bloqueados pela CSP de produção.',
+  );
+}
+if (/rel=["']stylesheet["'][^>]*media=["']print["']/i.test(indexHtml)) {
+  violations.push(
+    'stylesheet principal não pode depender de media=print e JavaScript inline para ser ativado.',
+  );
+}
+
 const forbiddenExtensions = new Set(['.map', '.pem', '.key', '.p12', '.pfx']);
 const sensitivePatterns = [
   ['chave privada', /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/],
