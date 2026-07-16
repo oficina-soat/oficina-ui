@@ -12,6 +12,7 @@ export {
   LIST_STOCK_MOVEMENTS,
   LIST_STOCK_PARTS,
   REGISTER_STOCK_ENTRY,
+  LIST_CATALOG_SERVICES,
 } from './execution.providers';
 export {
   ExecutionOperationError,
@@ -19,4 +20,7 @@ export {
   type ExecutionStatus,
   type FilaExecucao,
   type ExecutionDetails,
+  type CatalogService,
+  type StockPart,
+  type Page,
 } from './application';

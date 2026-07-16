@@ -8,11 +8,14 @@ export type {
   ExecutionDetails,
   ExecutionCommand,
   FilaExecucao,
+  CatalogQuery,
+  CatalogService,
 } from './execution-gateway';
 export {
   GetStockBalance,
   ListStockMovements,
   ListStockParts,
+  ListCatalogServices,
   RegisterStockEntry,
 } from './execution-gateway';
 export type {

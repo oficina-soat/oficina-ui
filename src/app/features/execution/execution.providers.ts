@@ -9,6 +9,7 @@ import {
   GetStockBalance,
   ListStockMovements,
   ListStockParts,
+  ListCatalogServices,
   RegisterStockEntry,
   StartDiagnosis,
   StartRepair,
@@ -47,6 +48,13 @@ export const LIST_STOCK_PARTS = new InjectionToken<ListStockParts>('LIST_STOCK_P
   providedIn: 'root',
   factory: () => new ListStockParts(inject(ExecutionApiAdapter)),
 });
+export const LIST_CATALOG_SERVICES = new InjectionToken<ListCatalogServices>(
+  'LIST_CATALOG_SERVICES',
+  {
+    providedIn: 'root',
+    factory: () => new ListCatalogServices(inject(ExecutionApiAdapter)),
+  },
+);
 export const GET_STOCK_BALANCE = new InjectionToken<GetStockBalance>('GET_STOCK_BALANCE', {
   providedIn: 'root',
   factory: () => new GetStockBalance(inject(ExecutionApiAdapter)),

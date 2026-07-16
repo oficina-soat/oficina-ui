@@ -14,6 +14,8 @@ interface ApiOptions {
   readonly expiresIn?: number;
   readonly rejectLogin?: boolean;
   readonly onExecutionCommand?: (route: Route) => void;
+  readonly composableOrder?: boolean;
+  readonly onItemCommand?: (route: Route) => void;
 }
 
 const mockApi = async (page: Page, options: ApiOptions = {}): Promise<void> => {
@@ -114,6 +116,18 @@ const mockApi = async (page: Page, options: ApiOptions = {}): Promise<void> => {
       });
       return;
     }
+    if (url.pathname === '/api/v1/servicos') {
+      await route.fulfill({
+        json: {
+          items: [{ servicoId: 'servico-1', nome: 'Revisão', valorBase: 150, ativo: true }],
+          page: 0,
+          size: 50,
+          totalElements: 1,
+          totalPages: 1,
+        },
+      });
+      return;
+    }
     if (url.pathname === '/api/v1/estoques/pecas/peca-1/saldo') {
       await route.fulfill({
         json: {
@@ -171,8 +185,21 @@ const mockApi = async (page: Page, options: ApiOptions = {}): Promise<void> => {
       });
       return;
     }
+    if (url.pathname === '/api/v1/ordens-servico/ordem-1/historico') {
+      await route.fulfill({ json: [] });
+      return;
+    }
+    if (url.pathname === '/api/v1/ordens-servico/ordem-1/servicos') {
+      options.onItemCommand?.(route);
+      await route.fulfill({ json: workOrder(true) });
+      return;
+    }
     if (url.pathname === '/api/v1/ordens-servico/ordem-1') {
-      await route.fulfill({ json: { ordemServicoId: 'ordem-1', estado: 'AGUARDANDO_APROVACAO' } });
+      await route.fulfill({
+        json: options.composableOrder
+          ? workOrder(false)
+          : { ordemServicoId: 'ordem-1', estado: 'AGUARDANDO_APROVACAO' },
+      });
       return;
     }
     if (url.pathname === '/api/v1/ordens-servico/ordem-1/pagamentos') {
@@ -211,6 +238,29 @@ const mockApi = async (page: Page, options: ApiOptions = {}): Promise<void> => {
     await route.continue();
   });
 };
+
+const workOrder = (withService: boolean) => ({
+  ordemServicoId: 'ordem-1',
+  clienteId: 'cliente-1',
+  veiculoId: 'veiculo-1',
+  descricaoProblema: 'Ruído no motor',
+  estado: 'EM_DIAGNOSTICO',
+  criadoEm: '2026-07-15T12:00:00Z',
+  atualizadoEm: '2026-07-15T13:00:00Z',
+  acoesPermitidas: ['INCLUIR_SERVICO', 'INCLUIR_PECA', 'CONCLUIR_DIAGNOSTICO'],
+  servicos: withService
+    ? [
+        {
+          servicoId: 'servico-1',
+          nome: 'Revisão',
+          quantidade: 1,
+          valorUnitario: 150,
+          valorTotal: 150,
+        },
+      ]
+    : [],
+  pecas: [],
+});
 
 const login = async (page: Page): Promise<void> => {
   await page.goto('/login');
@@ -342,5 +392,24 @@ test('estoque consulta saldo e registra somente ação oferecida pela API', asyn
   await page.getByLabel('Quantidade').fill('2');
   await page.getByRole('button', { name: 'Registrar entrada' }).click();
   await expect(page.getByText('Disponível')).toBeVisible();
+  await expectNoAccessibilityViolations(page);
+});
+
+test('composição da OS pesquisa e inclui item oferecido pelo backend', async ({ page }) => {
+  let idempotencyKey: string | null = null;
+  await mockApi(page, {
+    composableOrder: true,
+    onItemCommand: (route) => {
+      idempotencyKey = route.request().headers()['x-idempotency-key'] ?? null;
+    },
+  });
+  await login(page);
+  await page.goto('/ordens-servico/ordem-1');
+  await page.locator('#service-id').selectOption('servico-1');
+  await page.getByRole('button', { name: 'Incluir serviço', exact: true }).click();
+
+  await expect(page.getByText('Serviço incluído conforme resposta da API.')).toBeVisible();
+  await expect(page.getByRole('cell', { name: 'Revisão' })).toBeVisible();
+  expect(idempotencyKey).toMatch(/^[0-9a-f-]{36}$/);
   await expectNoAccessibilityViolations(page);
 });

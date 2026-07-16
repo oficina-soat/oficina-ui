@@ -59,6 +59,18 @@ export interface StockPart {
   readonly unitPrice: number;
   readonly active: boolean;
 }
+export interface CatalogService {
+  readonly id: string;
+  readonly name: string;
+  readonly description?: string;
+  readonly basePrice: number;
+  readonly active: boolean;
+}
+export interface CatalogQuery {
+  readonly name?: string;
+  readonly page?: number;
+  readonly size?: number;
+}
 export type StockAction = 'REGISTRAR_ENTRADA';
 export interface StockBalance {
   readonly partId: string;
@@ -82,6 +94,7 @@ export interface StockQuery {
   readonly code?: string;
   readonly page?: number;
   readonly size?: number;
+  readonly active?: boolean;
 }
 export interface MovementQuery {
   readonly partId: string;
@@ -104,10 +117,18 @@ export interface ExecutionGateway {
   iniciarReparo(command: ExecutionCommand): Promise<ExecutionDetails>;
   concluirReparo(command: ExecutionCommand): Promise<ExecutionDetails>;
   cancelar(command: ExecutionCommand): Promise<ExecutionDetails>;
+  consultarServicos(query?: CatalogQuery): Promise<Page<CatalogService>>;
   consultarPecas(query?: StockQuery): Promise<Page<StockPart>>;
   consultarSaldo(partId: string): Promise<StockBalance>;
   consultarMovimentos(query: MovementQuery): Promise<Page<StockMovement>>;
   registrarEntrada(command: StockEntryCommand): Promise<StockMovement>;
+}
+
+export class ListCatalogServices {
+  constructor(private readonly gateway: ExecutionGateway) {}
+  execute(query: CatalogQuery = {}): Promise<Page<CatalogService>> {
+    return this.gateway.consultarServicos(query);
+  }
 }
 
 export class ListStockParts {

@@ -98,6 +98,22 @@ export interface WorkOrderSummary {
   readonly createdAt: string;
   readonly updatedAt: string;
   readonly allowedActions: readonly WorkOrderAction[];
+  readonly services: readonly WorkOrderServiceItem[];
+  readonly parts: readonly WorkOrderPartItem[];
+}
+export interface WorkOrderServiceItem {
+  readonly serviceId: string;
+  readonly name: string;
+  readonly quantity: number;
+  readonly unitPrice: number;
+  readonly totalPrice: number;
+}
+export interface WorkOrderPartItem {
+  readonly partId: string;
+  readonly name: string;
+  readonly quantity: number;
+  readonly unitPrice: number;
+  readonly totalPrice: number;
 }
 export type WorkOrderAction =
   | 'INICIAR_DIAGNOSTICO'
@@ -106,7 +122,23 @@ export type WorkOrderAction =
   | 'INICIAR_EXECUCAO'
   | 'FINALIZAR'
   | 'ENTREGAR'
+  | 'INCLUIR_SERVICO'
+  | 'INCLUIR_PECA'
   | 'CANCELAR';
+
+export interface AddWorkOrderServiceCommand {
+  readonly id: string;
+  readonly serviceId: string;
+  readonly quantity: number;
+  readonly idempotencyKey: string;
+}
+
+export interface AddWorkOrderPartCommand {
+  readonly id: string;
+  readonly partId: string;
+  readonly quantity: number;
+  readonly idempotencyKey: string;
+}
 
 export interface WorkOrderHistoryEntry {
   readonly state: WorkOrderState;
@@ -175,6 +207,22 @@ export interface AttendanceGateway {
   alterarEstadoOrdemServico(command: ChangeWorkOrderStateCommand): Promise<WorkOrderSummary>;
   cancelarOrdemServico(command: CancelWorkOrderCommand): Promise<AsyncOperation>;
   abrirOrdemServico(command: OpenWorkOrderCommand): Promise<WorkOrderSummary>;
+  incluirServicoOrdemServico(command: AddWorkOrderServiceCommand): Promise<WorkOrderSummary>;
+  incluirPecaOrdemServico(command: AddWorkOrderPartCommand): Promise<WorkOrderSummary>;
+}
+
+export class AddWorkOrderService {
+  constructor(private readonly gateway: AttendanceGateway) {}
+  execute(command: AddWorkOrderServiceCommand): Promise<WorkOrderSummary> {
+    return this.gateway.incluirServicoOrdemServico(command);
+  }
+}
+
+export class AddWorkOrderPart {
+  constructor(private readonly gateway: AttendanceGateway) {}
+  execute(command: AddWorkOrderPartCommand): Promise<WorkOrderSummary> {
+    return this.gateway.incluirPecaOrdemServico(command);
+  }
 }
 
 export class ListClients {

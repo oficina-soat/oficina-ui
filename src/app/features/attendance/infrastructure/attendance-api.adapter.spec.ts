@@ -7,6 +7,7 @@ import { RUNTIME_CONFIG } from '../../../core/config/runtime-config';
 import { apiErrorInterceptor, idempotencyInterceptor } from '../../../core/http/api.interceptors';
 import { ClientOperationError } from '../application';
 import { AttendanceApiAdapter } from './attendance-api.adapter';
+import type { OrdemServico } from './generated/types.gen';
 
 describe('AttendanceApiAdapter', () => {
   let httpTesting: HttpTestingController;
@@ -282,4 +283,56 @@ describe('AttendanceApiAdapter', () => {
       requestedAt: '2026-07-15T13:00:00Z',
     });
   });
+
+  it('inclui serviço e peça com quantidade e idempotência sem enviar snapshots', async () => {
+    const serviceResult = adapter.incluirServicoOrdemServico({
+      id: 'os/1',
+      serviceId: 'servico-1',
+      quantity: 1.5,
+      idempotencyKey: 'service-key',
+    });
+    const serviceRequest = httpTesting.expectOne(
+      'https://api.example/api/v1/ordens-servico/os%2F1/servicos',
+    );
+    expect(serviceRequest.request.body).toEqual({ servicoId: 'servico-1', quantidade: 1.5 });
+    expect(serviceRequest.request.headers.get('X-Idempotency-Key')).toBe('service-key');
+    serviceRequest.flush(orderResponse());
+    await expect(serviceResult).resolves.toMatchObject({
+      services: [{ serviceId: 'servico-1', totalPrice: 150 }],
+    });
+
+    const partResult = adapter.incluirPecaOrdemServico({
+      id: 'os/1',
+      partId: 'peca-1',
+      quantity: 2,
+      idempotencyKey: 'part-key',
+    });
+    const partRequest = httpTesting.expectOne(
+      'https://api.example/api/v1/ordens-servico/os%2F1/pecas',
+    );
+    expect(partRequest.request.body).toEqual({ pecaId: 'peca-1', quantidade: 2 });
+    partRequest.flush(orderResponse());
+    await expect(partResult).resolves.toMatchObject({ parts: [{ partId: 'peca-1' }] });
+  });
+});
+
+const orderResponse = (): OrdemServico => ({
+  ordemServicoId: 'os-1',
+  clienteId: 'cliente-1',
+  veiculoId: 'veiculo-1',
+  descricaoProblema: 'Não liga',
+  estado: 'EM_DIAGNOSTICO',
+  criadoEm: '2026-07-15T12:00:00Z',
+  atualizadoEm: '2026-07-15T13:00:00Z',
+  acoesPermitidas: ['INCLUIR_SERVICO', 'INCLUIR_PECA'],
+  servicos: [
+    {
+      servicoId: 'servico-1',
+      nome: 'Revisão',
+      quantidade: 1.5,
+      valorUnitario: 100,
+      valorTotal: 150,
+    },
+  ],
+  pecas: [{ pecaId: 'peca-1', nome: 'Filtro', quantidade: 2, valorUnitario: 30, valorTotal: 60 }],
 });

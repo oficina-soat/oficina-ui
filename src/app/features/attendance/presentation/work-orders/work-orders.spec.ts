@@ -9,7 +9,10 @@ import {
   GET_WORK_ORDER_HISTORY,
   LIST_WORK_ORDERS,
   OPEN_WORK_ORDER,
+  ADD_WORK_ORDER_SERVICE,
+  ADD_WORK_ORDER_PART,
 } from '../../attendance.providers';
+import { LIST_CATALOG_SERVICES, LIST_STOCK_PARTS } from '../../../execution/public-api';
 import { NewWorkOrder } from './new-work-order';
 import { WorkOrderDetail } from './work-order-detail';
 import { WorkOrders } from './work-orders';
@@ -23,6 +26,8 @@ const order = {
   createdAt: '2026-07-15T12:00:00Z',
   updatedAt: '2026-07-15T12:00:00Z',
   allowedActions: ['INICIAR_DIAGNOSTICO', 'CANCELAR'] as const,
+  services: [],
+  parts: [],
 };
 
 describe('WorkOrders', () => {
@@ -137,6 +142,10 @@ describe('WorkOrders', () => {
         { provide: GET_WORK_ORDER_HISTORY, useValue: getHistory },
         { provide: CHANGE_WORK_ORDER_STATE, useValue: { execute: vi.fn() } },
         { provide: CANCEL_WORK_ORDER, useValue: { execute: vi.fn() } },
+        { provide: ADD_WORK_ORDER_SERVICE, useValue: { execute: vi.fn() } },
+        { provide: ADD_WORK_ORDER_PART, useValue: { execute: vi.fn() } },
+        { provide: LIST_CATALOG_SERVICES, useValue: { execute: vi.fn() } },
+        { provide: LIST_STOCK_PARTS, useValue: { execute: vi.fn() } },
         { provide: ActivatedRoute, useValue: route },
       ],
     }).compileComponents();
@@ -156,5 +165,87 @@ describe('WorkOrders', () => {
     );
     expect(states).toEqual(['', 'EM_DIAGNOSTICO']);
     expect(fixture.nativeElement.querySelector('.cancel-action')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('#service-id')).toBeFalsy();
+    expect(fixture.nativeElement.querySelector('#part-id')).toBeFalsy();
+  });
+
+  it('pesquisa e inclui somente os tipos de item oferecidos pela API', async () => {
+    const composable = {
+      ...order,
+      state: 'EM_DIAGNOSTICO' as const,
+      allowedActions: ['INCLUIR_SERVICO', 'INCLUIR_PECA', 'CONCLUIR_DIAGNOSTICO'] as const,
+    };
+    const addService = {
+      execute: vi.fn().mockResolvedValue({
+        ...composable,
+        services: [
+          {
+            serviceId: 'servico-1',
+            name: 'Revisão',
+            quantity: 1,
+            unitPrice: 150,
+            totalPrice: 150,
+          },
+        ],
+      }),
+    };
+    const addPart = { execute: vi.fn().mockResolvedValue(composable) };
+    const route = { snapshot: { paramMap: convertToParamMap({ ordemServicoId: 'ordem-1' }) } };
+    await TestBed.configureTestingModule({
+      imports: [WorkOrderDetail],
+      providers: [
+        provideRouter([]),
+        { provide: GET_WORK_ORDER, useValue: { execute: vi.fn().mockResolvedValue(composable) } },
+        { provide: GET_WORK_ORDER_HISTORY, useValue: { execute: vi.fn().mockResolvedValue([]) } },
+        { provide: CHANGE_WORK_ORDER_STATE, useValue: { execute: vi.fn() } },
+        { provide: CANCEL_WORK_ORDER, useValue: { execute: vi.fn() } },
+        { provide: ADD_WORK_ORDER_SERVICE, useValue: addService },
+        { provide: ADD_WORK_ORDER_PART, useValue: addPart },
+        {
+          provide: LIST_CATALOG_SERVICES,
+          useValue: {
+            execute: vi.fn().mockResolvedValue({
+              items: [{ id: 'servico-1', name: 'Revisão', basePrice: 150, active: true }],
+              page: 0,
+              size: 50,
+              totalElements: 1,
+              totalPages: 1,
+            }),
+          },
+        },
+        {
+          provide: LIST_STOCK_PARTS,
+          useValue: {
+            execute: vi.fn().mockResolvedValue({
+              items: [{ id: 'peca-1', name: 'Filtro', code: 'FIL', unitPrice: 30, active: true }],
+              page: 0,
+              size: 50,
+              totalElements: 1,
+              totalPages: 1,
+            }),
+          },
+        },
+        { provide: ActivatedRoute, useValue: route },
+      ],
+    }).compileComponents();
+    const fixture = TestBed.createComponent(WorkOrderDetail);
+    fixture.detectChanges();
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('#service-id')).toBeTruthy();
+    });
+
+    const select = fixture.nativeElement.querySelector('#service-id') as HTMLSelectElement;
+    select.value = 'servico-1';
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+    select.closest('form')?.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(addService.execute).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'ordem-1', serviceId: 'servico-1', quantity: 1 }),
+    );
+    expect(fixture.nativeElement.textContent).toContain('Revisão');
+    expect(fixture.nativeElement.querySelector('#part-id')).toBeTruthy();
   });
 });

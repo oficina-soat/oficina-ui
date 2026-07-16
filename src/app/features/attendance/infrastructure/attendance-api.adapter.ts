@@ -26,6 +26,8 @@ import {
   type ChangeWorkOrderStateCommand,
   type CancelWorkOrderCommand,
   type AsyncOperation,
+  type AddWorkOrderServiceCommand,
+  type AddWorkOrderPartCommand,
 } from '../application';
 import type {
   Cliente,
@@ -63,6 +65,20 @@ const mapWorkOrder = (order: OrdemServico): WorkOrderSummary => ({
   createdAt: order.criadoEm,
   updatedAt: order.atualizadoEm,
   allowedActions: order.acoesPermitidas,
+  services: (order.servicos ?? []).map((item) => ({
+    serviceId: item.servicoId,
+    name: item.nome,
+    quantity: item.quantidade,
+    unitPrice: item.valorUnitario,
+    totalPrice: item.valorTotal,
+  })),
+  parts: (order.pecas ?? []).map((item) => ({
+    partId: item.pecaId,
+    name: item.nome,
+    quantity: item.quantidade,
+    unitPrice: item.valorUnitario,
+    totalPrice: item.valorTotal,
+  })),
 });
 
 const mapHistory = (entry: HistoricoOrdemServico): WorkOrderHistoryEntry => ({
@@ -275,6 +291,51 @@ export class AttendanceApiAdapter implements AttendanceGateway {
         ),
       );
       return mapWorkOrder(data);
+    } catch (error: unknown) {
+      throw this.workOrderError(error);
+    }
+  }
+
+  incluirServicoOrdemServico(command: AddWorkOrderServiceCommand): Promise<WorkOrderSummary> {
+    return this.addItem(
+      command.id,
+      'servicos',
+      {
+        servicoId: command.serviceId,
+        quantidade: command.quantity,
+      },
+      command.idempotencyKey,
+    );
+  }
+
+  incluirPecaOrdemServico(command: AddWorkOrderPartCommand): Promise<WorkOrderSummary> {
+    return this.addItem(
+      command.id,
+      'pecas',
+      {
+        pecaId: command.partId,
+        quantidade: command.quantity,
+      },
+      command.idempotencyKey,
+    );
+  }
+
+  private async addItem(
+    id: string,
+    path: 'servicos' | 'pecas',
+    body: object,
+    idempotencyKey: string,
+  ): Promise<WorkOrderSummary> {
+    try {
+      return mapWorkOrder(
+        await firstValueFrom(
+          this.http.post<OrdemServico>(
+            `${this.config.apiBaseUrl}/ordens-servico/${encodeURIComponent(id)}/${path}`,
+            body,
+            { context: idempotentCommandContext(idempotencyKey) },
+          ),
+        ),
+      );
     } catch (error: unknown) {
       throw this.workOrderError(error);
     }

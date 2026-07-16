@@ -11,6 +11,8 @@ import {
   ListWorkOrders,
   LoadClientVehicles,
   OpenWorkOrder,
+  AddWorkOrderService,
+  AddWorkOrderPart,
 } from './application';
 import { AttendanceApiAdapter } from './infrastructure';
 
@@ -57,4 +59,12 @@ export const CHANGE_WORK_ORDER_STATE = new InjectionToken<ChangeWorkOrderState>(
 export const CANCEL_WORK_ORDER = new InjectionToken<CancelWorkOrder>('CANCEL_WORK_ORDER', {
   providedIn: 'root',
   factory: () => new CancelWorkOrder(inject(AttendanceApiAdapter)),
+});
+export const ADD_WORK_ORDER_SERVICE = new InjectionToken<AddWorkOrderService>(
+  'ADD_WORK_ORDER_SERVICE',
+  { providedIn: 'root', factory: () => new AddWorkOrderService(inject(AttendanceApiAdapter)) },
+);
+export const ADD_WORK_ORDER_PART = new InjectionToken<AddWorkOrderPart>('ADD_WORK_ORDER_PART', {
+  providedIn: 'root',
+  factory: () => new AddWorkOrderPart(inject(AttendanceApiAdapter)),
 });

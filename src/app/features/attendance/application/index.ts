@@ -20,6 +20,10 @@ export type {
   WorkOrderFailureReason,
   WorkOrderState,
   WorkOrderSummary,
+  WorkOrderServiceItem,
+  WorkOrderPartItem,
+  AddWorkOrderServiceCommand,
+  AddWorkOrderPartCommand,
 } from './attendance-gateway';
 export {
   ClientOperationError,
@@ -35,4 +39,6 @@ export {
   OpenWorkOrder,
   VehicleOperationError,
   WorkOrderOperationError,
+  AddWorkOrderService,
+  AddWorkOrderPart,
 } from './attendance-gateway';

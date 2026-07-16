@@ -20,6 +20,8 @@ import {
   type StockMovement,
   type StockPart,
   type StockQuery,
+  type CatalogQuery,
+  type CatalogService,
 } from '../application';
 import type {
   ConsultarFilaExecucaoResponse,
@@ -29,6 +31,8 @@ import type {
   MovimentoEstoquePage,
   Peca,
   PecaPage,
+  Servico,
+  ServicoPage,
   SaldoEstoque,
 } from './generated/types.gen';
 
@@ -57,6 +61,13 @@ const mapPart = (item: Peca): StockPart => ({
   name: item.nome,
   code: item.codigo,
   unitPrice: item.valorUnitario,
+  active: item.ativo,
+});
+const mapService = (item: Servico): CatalogService => ({
+  id: item.servicoId,
+  name: item.nome,
+  ...(item.descricao === undefined ? {} : { description: item.descricao }),
+  basePrice: item.valorBase,
   active: item.ativo,
 });
 const mapBalance = (item: SaldoEstoque): StockBalance => ({
@@ -146,12 +157,31 @@ export class ExecutionApiAdapter implements ExecutionGateway {
     );
   }
 
+  async consultarServicos(query: CatalogQuery = {}): Promise<Page<CatalogService>> {
+    let params = new HttpParams()
+      .set('page', String(query.page ?? 0))
+      .set('size', String(query.size ?? 20))
+      .set('ativo', 'true');
+    if (query.name) params = params.set('nome', query.name);
+    try {
+      return mapPage(
+        await firstValueFrom(
+          this.http.get<ServicoPage>(`${this.config.apiBaseUrl}/servicos`, { params }),
+        ),
+        mapService,
+      );
+    } catch (error: unknown) {
+      throw this.executionError(error);
+    }
+  }
+
   async consultarPecas(query: StockQuery = {}): Promise<Page<StockPart>> {
     let params = new HttpParams()
       .set('page', String(query.page ?? 0))
       .set('size', String(query.size ?? 20));
     if (query.name) params = params.set('nome', query.name);
     if (query.code) params = params.set('codigo', query.code);
+    if (query.active !== undefined) params = params.set('ativo', String(query.active));
     try {
       return mapPage(
         await firstValueFrom(

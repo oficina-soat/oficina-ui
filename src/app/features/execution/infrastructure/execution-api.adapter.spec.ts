@@ -125,6 +125,21 @@ describe('ExecutionApiAdapter', () => {
   });
 
   it('mapeia catálogo, saldo, movimentos e entrada preservando ações canônicas', async () => {
+    const servicesResult = adapter.consultarServicos({ name: 'revisão', size: 50 });
+    const servicesRequest = httpTesting.expectOne((request) => request.url.endsWith('/servicos'));
+    expect(servicesRequest.request.params.get('nome')).toBe('revisão');
+    expect(servicesRequest.request.params.get('ativo')).toBe('true');
+    servicesRequest.flush({
+      items: [{ servicoId: 'servico-1', nome: 'Revisão', valorBase: 150, ativo: true }],
+      page: 0,
+      size: 50,
+      totalElements: 1,
+      totalPages: 1,
+    });
+    await expect(servicesResult).resolves.toMatchObject({
+      items: [{ id: 'servico-1', name: 'Revisão', basePrice: 150, active: true }],
+    });
+
     const partsResult = adapter.consultarPecas({ name: 'bateria', page: 0 });
     const partsRequest = httpTesting.expectOne((request) => request.url.endsWith('/pecas'));
     expect(partsRequest.request.params.get('nome')).toBe('bateria');
