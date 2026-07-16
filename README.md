@@ -36,7 +36,7 @@ npm run api:generate
 
 O acesso às APIs usa o pipeline transversal documentado em [Arquitetura e guardrails](docs/architecture.md): sessão limitada à aba, correlação, erros canônicos e idempotência explícita para comandos.
 
-O acesso publicado no `lab` usa uma stack opcional e isolada de S3 e CloudFront. O processo, as variáveis necessárias e a política de cache estão em [Deploy no lab](docs/deployment.md).
+O acesso publicado no `lab` usa um workload Nginx opcional no EKS, exposto pela rota de fallback do HTTP API compartilhado. O processo, as variáveis e os guardrails estão em [Deploy no lab](docs/deployment.md).
 
 ## Princípio arquitetural
 

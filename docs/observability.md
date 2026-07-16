@@ -16,7 +16,7 @@ Não são coletados URL, rota, query string, payload, mensagem, stack, conteúdo
 
 O envio usa `navigator.sendBeacon` com JSON diretamente ao endpoint HTTPS configurado. O coletor deve:
 
-- aceitar `POST` com `Content-Type: application/json` e configurar CORS para o domínio do CloudFront;
+- aceitar `POST` com `Content-Type: application/json` e configurar CORS para o endpoint público compartilhado;
 - tratar `eventId` como chave de deduplicação;
 - indexar `correlationId` para correlação com logs dos backends;
 - aplicar retenção e controle de acesso compatíveis com telemetria operacional;
