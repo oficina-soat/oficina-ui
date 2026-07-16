@@ -16,9 +16,12 @@ interface ApiOptions {
   readonly onExecutionCommand?: (route: Route) => void;
   readonly composableOrder?: boolean;
   readonly onItemCommand?: (route: Route) => void;
+  readonly onUserCommand?: (route: Route) => void;
+  readonly credentialFailures?: number;
 }
 
 const mockApi = async (page: Page, options: ApiOptions = {}): Promise<void> => {
+  let credentialCalls = 0;
   await page.route('**/*', async (route) => {
     const request = route.request();
     const url = new URL(request.url());
@@ -42,6 +45,34 @@ const mockApi = async (page: Page, options: ApiOptions = {}): Promise<void> => {
     }
     if (url.pathname === '/api/v1/clientes') {
       await route.fulfill({ json: { items: [], page: 0, size: 20, totalItems: 8, totalPages: 1 } });
+      return;
+    }
+    if (url.pathname === '/api/v1/usuarios' && request.method() === 'GET') {
+      await route.fulfill({
+        json: { items: [userDto('ATIVO')], page: 0, size: 20, totalItems: 1, totalPages: 1 },
+      });
+      return;
+    }
+    if (url.pathname === '/api/v1/usuarios/user-1' && request.method() === 'GET') {
+      await route.fulfill({ json: userDto('ATIVO') });
+      return;
+    }
+    if (url.pathname === '/api/v1/usuarios/user-1/bloqueio') {
+      options.onUserCommand?.(route);
+      await route.fulfill({ json: userDto('BLOQUEADO') });
+      return;
+    }
+    if (url.pathname === '/auth/usuarios/user-1/credencial') {
+      credentialCalls += 1;
+      if (credentialCalls <= (options.credentialFailures ?? 0)) {
+        await route.fulfill({
+          status: 503,
+          contentType: 'application/json',
+          body: JSON.stringify({ code: 'SERVICE_UNAVAILABLE', message: 'Auth indisponível' }),
+        });
+        return;
+      }
+      await route.fulfill({ json: { status: 'ATIVA', acoesPermitidas: [] } });
       return;
     }
     if (url.pathname === '/api/v1/ordens-servico') {
@@ -262,6 +293,22 @@ const workOrder = (withService: boolean) => ({
   pecas: [],
 });
 
+const userDto = (status: 'ATIVO' | 'BLOQUEADO') => ({
+  usuarioId: 'user-1',
+  pessoaId: 'person-1',
+  nome: 'Usuária Sentinela E2E',
+  documento: '52998224725',
+  tipoPessoa: 'FISICA',
+  status,
+  papeis: ['mecanico'],
+  acoesPermitidas:
+    status === 'ATIVO'
+      ? ['ATUALIZAR_DADOS', 'BLOQUEAR', 'INATIVAR']
+      : ['ATUALIZAR_DADOS', 'REATIVAR', 'INATIVAR'],
+  criadoEm: '2026-07-16T00:00:00Z',
+  atualizadoEm: '2026-07-16T01:00:00Z',
+});
+
 const login = async (page: Page): Promise<void> => {
   await page.goto('/login');
   await page.getByLabel('CPF').fill(cpf);
@@ -333,6 +380,46 @@ test('guard visual impede acesso administrativo de mecânico', async ({ page }) 
 
   await expect(page).toHaveURL(/\/acesso-negado$/);
   await expect(page.getByRole('heading', { name: 'Acesso não disponível' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Usuários', exact: true })).toHaveCount(0);
+});
+
+test('administra usuário com confirmação, idempotência e ações canônicas', async ({ page }) => {
+  let idempotencyKey: string | null = null;
+  await mockApi(page, {
+    roles: ['administrativo'],
+    onUserCommand: (route) => {
+      idempotencyKey = route.request().headers()['x-idempotency-key'] ?? null;
+    },
+  });
+  await login(page);
+  await page.getByRole('link', { name: 'Usuários', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Usuários operacionais' })).toBeVisible();
+  await expect(page.getByText('***.***.***-25')).toBeVisible();
+  await expectNoAccessibilityViolations(page);
+  await page.getByRole('link', { name: 'Ver detalhes' }).click();
+  await expect(page.getByText('Usuária Sentinela E2E')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Bloquear usuário' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Reativar usuário' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Bloquear usuário' }).click();
+  await expect(page.getByRole('alertdialog')).toBeVisible();
+  await expectNoAccessibilityViolations(page);
+  await page.getByRole('button', { name: 'Confirmar ação' }).click();
+  await expect(page.getByText('Usuário bloqueado conforme resposta do serviço.')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Reativar usuário' })).toBeVisible();
+  expect(idempotencyKey).toMatch(/^[0-9a-f-]{36}$/);
+});
+
+test('falha parcial e consistência eventual da credencial preservam o cadastro', async ({
+  page,
+}) => {
+  await mockApi(page, { roles: ['administrativo'], credentialFailures: 1 });
+  await login(page);
+  await page.goto('/administracao/usuarios/user-1');
+  await expect(page.getByText('Usuária Sentinela E2E')).toBeVisible();
+  await expect(page.getByText('Credencial temporariamente indisponível')).toBeVisible();
+  await page.getByRole('button', { name: 'Tentar novamente' }).last().click();
+  await expect(page.getByText('Estado: Ativa')).toBeVisible();
+  await expectNoAccessibilityViolations(page);
 });
 
 test('fila executa comando idempotente e apresenta estado aceito', async ({ page }) => {
