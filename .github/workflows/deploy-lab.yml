@@ -36,6 +36,9 @@ jobs:
     permissions:
       contents: read
     steps:
+      - name: Checkout UI deployment assets
+        uses: actions/checkout@v6
+
       - name: Download validated production build
         uses: actions/download-artifact@v7
         with:
@@ -53,6 +56,9 @@ jobs:
         uses: hashicorp/setup-terraform@v4
         with:
           terraform_wrapper: false
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v5
 
       - name: Resolve backend configuration
         id: backend
@@ -89,13 +95,15 @@ jobs:
             echo "auth_base_url=${UI_AUTH_BASE_URL:-${endpoint%/}}"
           } >> "${GITHUB_OUTPUT}"
 
-      - name: Ensure hosting and read outputs
+      - name: Ensure optional workload infrastructure
         id: hosting
         working-directory: infrastructure/terraform/optional/ui-hosting/lab
         env:
           RESOLVED_TF_STATE_BUCKET: ${{ steps.backend.outputs.bucket }}
           RESOLVED_TF_STATE_REGION: ${{ steps.backend.outputs.region }}
           RESOLVED_TF_STATE_DYNAMODB_TABLE: ${{ steps.backend.outputs.dynamodb_table }}
+          TF_VAR_main_state_bucket: ${{ steps.backend.outputs.bucket }}
+          TF_VAR_main_state_region: ${{ steps.backend.outputs.region }}
           TF_VAR_region: ${{ vars.AWS_REGION || 'us-east-1' }}
         shell: bash
         run: |
@@ -110,17 +118,10 @@ jobs:
           fi
           terraform init -input=false "${args[@]}"
           terraform apply -input=false -auto-approve
-          bucket="$(terraform output -raw bucket_name)"
-          distribution="$(terraform output -raw cloudfront_distribution_id)"
-          url="$(terraform output -raw ui_url)"
-          if [[ -z "${bucket}" || -z "${url}" ]]; then
-            echo "A hospedagem opcional não retornou os outputs obrigatórios após o apply." >&2
-            exit 1
-          fi
           {
-            echo "bucket=${bucket}"
-            echo "distribution=${distribution}"
-            echo "url=${url}"
+            echo "ecr_repository_url=$(terraform output -raw ecr_repository_url)"
+            echo "cluster_name=$(terraform output -raw eks_cluster_name)"
+            echo "url=$(terraform output -raw ui_url)"
           } >> "${GITHUB_OUTPUT}"
 
       - name: Validate runtime endpoints
@@ -169,38 +170,36 @@ jobs:
             '{repository: $repository, revision: $revision, runId: $runId, deployedAt: $deployedAt}' \
             > dist/oficina-ui/browser/deploy-metadata.json
 
-      - name: Upload immutable artifacts
+      - name: Build and publish validated image
+        env:
+          ECR_REPOSITORY_URL: ${{ steps.hosting.outputs.ecr_repository_url }}
         shell: bash
         run: |
-          aws s3 sync dist/oficina-ui/browser "s3://${{ steps.hosting.outputs.bucket }}" \
-            --delete \
-            --exclude index.html \
-            --exclude config/runtime-config.json \
-            --exclude deploy-metadata.json \
-            --cache-control "public,max-age=31536000,immutable"
+          set -euo pipefail
+          registry="${ECR_REPOSITORY_URL%%/*}"
+          aws ecr get-login-password | docker login --username AWS --password-stdin "${registry}"
+          docker build --tag "${ECR_REPOSITORY_URL}:${GITHUB_SHA}" .
+          docker tag "${ECR_REPOSITORY_URL}:${GITHUB_SHA}" "${ECR_REPOSITORY_URL}:latest"
+          docker push "${ECR_REPOSITORY_URL}:${GITHUB_SHA}"
+          docker push "${ECR_REPOSITORY_URL}:latest"
 
-      - name: Upload entrypoint and runtime files without cache
+      - name: Deploy workload to EKS
+        env:
+          ECR_REPOSITORY_URL: ${{ steps.hosting.outputs.ecr_repository_url }}
+          EKS_CLUSTER_NAME: ${{ steps.hosting.outputs.cluster_name }}
         shell: bash
         run: |
-          bucket="s3://${{ steps.hosting.outputs.bucket }}"
-          aws s3 cp dist/oficina-ui/browser/index.html "${bucket}/index.html" \
-            --content-type "text/html; charset=utf-8" \
-            --cache-control "no-cache,no-store,must-revalidate"
-          aws s3 cp dist/oficina-ui/browser/config/runtime-config.json \
-            "${bucket}/config/runtime-config.json" \
-            --content-type "application/json" \
-            --cache-control "no-cache,no-store,must-revalidate"
-          aws s3 cp dist/oficina-ui/browser/deploy-metadata.json \
-            "${bucket}/deploy-metadata.json" \
-            --content-type "application/json" \
-            --cache-control "no-cache,no-store,must-revalidate"
-
-      - name: Invalidate mutable CloudFront paths
-        if: steps.hosting.outputs.distribution != ''
-        run: |
-          aws cloudfront create-invalidation \
-            --distribution-id "${{ steps.hosting.outputs.distribution }}" \
-            --paths "/" "/index.html" "/config/*" "/deploy-metadata.json"
+          set -euo pipefail
+          image="${ECR_REPOSITORY_URL}:${GITHUB_SHA}"
+          aws eks update-kubeconfig --region "${AWS_REGION}" --name "${EKS_CLUSTER_NAME}"
+          kubectl create configmap oficina-ui-runtime \
+            --from-file=runtime-config.json=dist/oficina-ui/browser/config/runtime-config.json \
+            --from-file=deploy-metadata.json=dist/oficina-ui/browser/deploy-metadata.json \
+            --dry-run=client -o yaml | kubectl apply -f -
+          kubectl kustomize k8s/overlays/lab \
+            | sed "s|IMAGE_PLACEHOLDER|${image}|g" \
+            | kubectl apply -f -
+          kubectl rollout status deployment/oficina-ui --timeout=300s
 
       - name: Publish deployment summary
         shell: bash
@@ -209,6 +208,7 @@ jobs:
             echo "### Oficina UI Lab"
             echo
             echo "- URL: ${{ steps.hosting.outputs.url }}"
+            echo "- Image: \`${{ steps.hosting.outputs.ecr_repository_url }}:${GITHUB_SHA}\`"
             echo "- Revision: \`${GITHUB_SHA}\`"
             echo "- Run: \`${GITHUB_RUN_ID}\`"
           } >> "${GITHUB_STEP_SUMMARY}"

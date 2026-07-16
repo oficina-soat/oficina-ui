@@ -1,30 +1,38 @@
 # Deploy no lab
 
-A UI é publicada por um pipeline próprio em uma stack opcional de S3 e CloudFront. Ela não participa dos deploys dos backends nem altera a infraestrutura obrigatória da oficina.
+A UI é publicada como container Nginx em um workload opcional do EKS. Ela reutiliza o HTTP API e o VPC Link do lab, mas não participa dos deploys dos backends nem se torna requisito da infraestrutura principal.
+
+## Fluxo
+
+```mermaid
+flowchart LR
+    CI[Quality Gate e E2E] --> Artifact[Build validado]
+    Artifact --> Image[Imagem Nginx]
+    Image --> ECR[ECR oficina-ui]
+    ECR --> Pod[Deployment oficina-ui]
+    Browser[Navegador] --> APIGW[HTTP API]
+    APIGW -->|$default| NLB[NLB interno]
+    NLB --> Pod
+```
+
+As rotas explícitas de autenticação e `/api/v1` prevalecem sobre `$default`; a raiz e os caminhos da SPA são atendidos pela UI. O Nginx usa `try_files` para retornar `index.html` após F5 em uma rota Angular.
 
 ## Pré-requisitos
 
-1. Garanta que o Terraform opcional de hospedagem esteja disponível no branch `main` do `oficina-infra`; o deploy da UI aplica essa composição de forma idempotente antes da publicação.
-2. Configure no `oficina-ui` os secrets AWS usados pelos demais repositórios.
-3. Opcionalmente, configure variables para sobrescrever a descoberta automática:
-   - `AWS_REGION`, normalmente `us-east-1`;
-   - `TF_STATE_BUCKET`, `TF_STATE_REGION` e, se usado, `TF_STATE_DYNAMODB_TABLE`;
-   - `UI_API_BASE_URL`, incluindo `/api/v1`;
-   - `UI_AUTH_BASE_URL`, contendo somente o origin do API Gateway;
-   - `UI_OBSERVABILITY_ENDPOINT`, com o endpoint HTTPS do coletor de telemetria.
+1. O branch `main` do `oficina-infra` deve publicar os outputs do EKS, HTTP API e VPC Link usados pelo state opcional.
+2. Configure no `oficina-ui` os secrets AWS temporários usados pelos demais repositórios.
+3. Opcionalmente configure `AWS_REGION`, overrides do backend Terraform, `UI_API_BASE_URL`, `UI_AUTH_BASE_URL` ou `UI_OBSERVABILITY_ENDPOINT`.
 
-Sem overrides, o pipeline deriva o bucket compartilhado pela conta e região AWS, lê `api_gateway_endpoint` do state principal, monta os endpoints públicos e usa o origin como `connect-src` da CSP. Em seguida, aplica de forma idempotente a hospedagem S3 e CloudFront no state isolado.
+Sem overrides, o pipeline deriva os endpoints do state principal. Em seguida, aplica o state opcional, publica a imagem no ECR, materializa o ConfigMap de runtime e aguarda o rollout.
 
-O pipeline lê `bucket_name`, `cloudfront_distribution_id` e `ui_url` diretamente do state isolado. Nenhum nome de recurso de hospedagem é duplicado no repositório da UI.
+## Garantias de publicação
 
-## Política de publicação
+- o deploy só começa depois de Quality Gate, testes e E2E;
+- a imagem contém exatamente o artefato produzido pelo Quality Gate, sem recompilar;
+- a imagem executa como usuário não-root e o pod usa filesystem somente leitura;
+- endpoints e metadados são montados por ConfigMap, sem secrets no bundle;
+- readiness e liveness usam `/healthz`;
+- o rollout falha se o pod não ficar pronto em cinco minutos;
+- cada imagem recebe a tag imutável do commit e a conveniência `latest`.
 
-- o workflow reutilizável [UI Quality Gate](continuous-integration.md) executa instalação reproduzível, validações e E2E; qualquer falha bloqueia o deploy;
-- o deploy baixa exatamente o artefato produzido pelo Quality Gate, sem recompilar a aplicação;
-- artefatos com hash recebem cache de um ano e `immutable`;
-- `index.html`, `config/runtime-config.json` e `deploy-metadata.json` não são armazenados em cache;
-- somente caminhos mutáveis são invalidados no CloudFront;
-- endpoints são injetados depois do build, sem recompilar nem armazenar credenciais;
-- `deploy-metadata.json` registra repositório, revisão, run e horário do deploy.
-
-Após um push em `main`, a URL aparece no summary do workflow `Deploy UI Lab`. O workflow também pode ser executado manualmente.
+Após um push em `main`, a URL, imagem e revisão aparecem no summary do workflow `Deploy UI Lab`.

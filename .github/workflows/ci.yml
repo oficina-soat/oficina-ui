@@ -30,11 +30,28 @@ jobs:
           node-version-file: .node-version
           cache: npm
 
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v5
+
       - name: Install dependencies reproducibly
         run: npm ci
 
       - name: Run quality checks
         run: npm run validate
+
+      - name: Validate container and Kubernetes assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          kubectl kustomize k8s/overlays/lab > /tmp/oficina-ui-k8s.yaml
+          grep -q 'image: IMAGE_PLACEHOLDER' /tmp/oficina-ui-k8s.yaml
+          grep -q 'nodePort: 30084' /tmp/oficina-ui-k8s.yaml
+          docker build --tag "oficina-ui:quality-${GITHUB_SHA}" .
+          docker run --rm --read-only \
+            --tmpfs /tmp:uid=101,gid=101 \
+            --tmpfs /var/cache/nginx:uid=101,gid=101 \
+            --tmpfs /var/run:uid=101,gid=101 \
+            "oficina-ui:quality-${GITHUB_SHA}" nginx -t
 
       - name: Upload production build
         uses: actions/upload-artifact@v6

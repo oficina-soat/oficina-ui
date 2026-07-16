@@ -41,7 +41,7 @@ Os detalhes de OS e execução expõem listas canônicas de ações permitidas. 
 
 ### CORS e configuração de origem
 
-Validar preflight, headers `Authorization`, `Content-Type`, `X-Correlation-Id` e `X-Idempotency-Key`, métodos usados pelo MVP e origem CloudFront. A configuração deve ser declarada no `oficina-infra`, nunca contornada com proxy de produção no Angular.
+Validar preflight, headers `Authorization`, `Content-Type`, `X-Correlation-Id` e `X-Idempotency-Key` e métodos usados pelo MVP. Como UI e APIs compartilham o HTTP API, o caminho padrão é same-origin; qualquer override externo deve continuar declarado no `oficina-infra`, nunca contornado com proxy de produção no Angular.
 
 ### Sessão
 

@@ -1,0 +1,3 @@
+*
+!dist/oficina-ui/browser/**
+!deploy/nginx.conf
