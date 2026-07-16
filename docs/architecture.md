@@ -57,6 +57,8 @@ Os snapshots em `contracts/openapi` vêm dos contratos canônicos do `oficina-pl
 2. `npm run api:generate` recria os tipos contratuais dentro de `infrastructure/generated` de cada feature;
 3. adapters HTTP escritos manualmente consomem esses tipos e mapeiam DTOs para contratos da camada `application`.
 
+Quando uma feature consome mais de uma autoridade, cada contrato é gerado dentro da própria fronteira da feature. Em `administration/users`, os tipos de OS e Auth ficam em diretórios distintos, assim como seus adapters; isso evita importar detalhes internos de `attendance` ou `auth` e mantém explícito que cadastro operacional e credencial possuem autoridades diferentes.
+
 O transporte não é gerado porque o runtime disponível do gerador ainda não é compatível com `exactOptionalPropertyTypes` do TypeScript 6. Essa limitação não justifica reduzir o strict mode nem adicionar supressões ao código.
 
 Arquivos gerados são versionados para builds reproduzíveis e não devem ser editados manualmente. A configuração de runtime deve fornecer `authBaseUrl` para as rotas `/auth` e `apiBaseUrl` já com o prefixo público `/api/v1`.

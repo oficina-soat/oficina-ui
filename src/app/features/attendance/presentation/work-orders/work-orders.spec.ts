@@ -131,6 +131,7 @@ describe('WorkOrders', () => {
           { state: 'RECEBIDA', occurredAt: '2026-07-15T12:00:00Z', reason: 'OS aberta' },
         ]),
     };
+    const change = { execute: vi.fn().mockResolvedValue(order) };
     const route = {
       snapshot: { paramMap: convertToParamMap({ ordemServicoId: 'ordem-1' }) },
     };
@@ -140,7 +141,7 @@ describe('WorkOrders', () => {
         provideRouter([]),
         { provide: GET_WORK_ORDER, useValue: get },
         { provide: GET_WORK_ORDER_HISTORY, useValue: getHistory },
-        { provide: CHANGE_WORK_ORDER_STATE, useValue: { execute: vi.fn() } },
+        { provide: CHANGE_WORK_ORDER_STATE, useValue: change },
         { provide: CANCEL_WORK_ORDER, useValue: { execute: vi.fn() } },
         { provide: ADD_WORK_ORDER_SERVICE, useValue: { execute: vi.fn() } },
         { provide: ADD_WORK_ORDER_PART, useValue: { execute: vi.fn() } },
@@ -160,10 +161,17 @@ describe('WorkOrders', () => {
     expect(getHistory.execute).toHaveBeenCalledWith('ordem-1');
     expect(fixture.nativeElement.textContent).toContain('OS aberta');
     expect(fixture.nativeElement.textContent).toContain('Ações da OS');
-    const states = [...fixture.nativeElement.querySelectorAll('#next-state option')].map(
-      (option: HTMLOptionElement) => option.value,
+    expect(fixture.nativeElement.querySelector('#next-state')).toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('Iniciar diagnóstico');
+    expect(fixture.nativeElement.textContent).not.toContain('Concluir diagnóstico');
+    const startButton = [...fixture.nativeElement.querySelectorAll('.action-buttons button')].find(
+      (button: HTMLButtonElement) => button.textContent?.includes('Iniciar diagnóstico'),
+    ) as HTMLButtonElement;
+    startButton.click();
+    await fixture.whenStable();
+    expect(change.execute).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'ordem-1', state: 'EM_DIAGNOSTICO' }),
     );
-    expect(states).toEqual(['', 'EM_DIAGNOSTICO']);
     expect(fixture.nativeElement.querySelector('.cancel-action')).toBeTruthy();
     expect(fixture.nativeElement.querySelector('#service-id')).toBeFalsy();
     expect(fixture.nativeElement.querySelector('#part-id')).toBeFalsy();

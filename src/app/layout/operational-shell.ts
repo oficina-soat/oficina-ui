@@ -66,6 +66,7 @@ export class OperationalShell {
       { label: 'Ordens de serviço', href: '/ordens-servico' },
     ];
     if (this.session.hasAnyRole(['administrativo'])) {
+      items.push({ label: 'Usuários', href: '/administracao/usuarios' });
       items.push({ label: 'Ativação de credencial', href: '/administracao/ativacoes/nova' });
     }
     if (this.session.hasAnyRole(['administrativo', 'recepcionista'])) {

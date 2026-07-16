@@ -7,7 +7,12 @@ import process from 'node:process';
 
 const contracts = [
   ['oficina-auth-lambda.yaml', 'src/app/features/auth/infrastructure/generated'],
+  [
+    'oficina-auth-lambda.yaml',
+    'src/app/features/administration/users/infrastructure/generated/auth',
+  ],
   ['oficina-os-service.yaml', 'src/app/features/attendance/infrastructure/generated'],
+  ['oficina-os-service.yaml', 'src/app/features/administration/users/infrastructure/generated/os'],
   ['oficina-execution-service.yaml', 'src/app/features/execution/infrastructure/generated'],
   ['oficina-billing-service.yaml', 'src/app/features/billing/infrastructure/generated'],
 ];

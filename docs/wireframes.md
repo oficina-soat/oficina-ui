@@ -56,10 +56,31 @@ O campo de busca só será ativado quando houver filtro correspondente na API. A
 | Histórico                                                      |
 | data/hora     estado     motivo                                 |
 |----------------------------------------------------------------|
-| Ações apresentadas pela capacidade contratada                  |
-| [ação] [ação]                                                   |
+| Botões apresentados pela capacidade contratada                 |
+| [Iniciar diagnóstico] [Cancelar]                               |
 +----------------------------------------------------------------+
 ```
+
+## Administração de usuários
+
+```text
++----------------------------------------------------------------+
+| Usuários operacionais                                          |
+| Nome [____] CPF [____] Estado [__] Papel [__] [Pesquisar]      |
+|----------------------------------------------------------------|
+| Nome       CPF mascarado       Estado     Papéis     [Detalhe] |
++----------------------------------------------------------------+
+
++----------------------------------------------------------------+
+| Cadastro operacional                         [Editar, se válido]|
+| Nome | CPF | Estado | Papéis                                   |
+|----------------------------------------------------------------|
+| Credencial de acesso                                           |
+| estado | expiração, ou indisponibilidade parcial com retry     |
++----------------------------------------------------------------+
+```
+
+Edição e ações são exibidas somente quando a autoridade correspondente as retorna em `acoesPermitidas`. Bloqueio, reativação, inativação e geração do token exigem confirmação acessível. O token permanece apenas no estado transitório da tela. Falha do Auth não oculta nem invalida o cadastro operacional carregado do OS.
 
 ## Fila do mecânico
 
