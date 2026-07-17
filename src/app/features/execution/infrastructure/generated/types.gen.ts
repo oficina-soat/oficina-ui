@@ -128,7 +128,7 @@ export type Execucao = ExecucaoCreateRequest & {
     acoesPermitidas: Array<AcaoPermitidaExecucao>;
 };
 
-export type AcaoPermitidaExecucao = 'INICIAR_DIAGNOSTICO' | 'CONCLUIR_DIAGNOSTICO' | 'INICIAR_REPARO' | 'CONCLUIR_REPARO' | 'CANCELAR';
+export type AcaoPermitidaExecucao = 'INICIAR_DIAGNOSTICO' | 'CONCLUIR_DIAGNOSTICO' | 'CONCLUIR_REPARO';
 
 export type FilaExecucaoItem = Execucao & {
     /**
@@ -145,10 +145,6 @@ export type ConclusaoDiagnosticoRequest = {
 
 export type ConclusaoReparoRequest = {
     observacoes?: string;
-};
-
-export type CancelamentoRequest = {
-    motivo?: string;
 };
 
 export type ErrorResponse = {
@@ -1149,51 +1145,6 @@ export type ConcluirDiagnosticoResponses = {
 
 export type ConcluirDiagnosticoResponse = ConcluirDiagnosticoResponses[keyof ConcluirDiagnosticoResponses];
 
-export type IniciarReparoData = {
-    body?: never;
-    headers: {
-        /**
-         * Identificador de correlacao aceito do cliente e propagado em chamadas HTTP, eventos, logs e traces, conforme contracts/error-model.md.
-         */
-        'X-Correlation-Id'?: string;
-        /**
-         * Chave obrigatoria neste servico para retries seguros em operacoes POST ou PATCH com efeito colateral, conforme contracts/idempotency.md.
-         */
-        'X-Idempotency-Key': string;
-    };
-    path: {
-        execucaoId: string;
-    };
-    query?: never;
-    url: '/execucoes/{execucaoId}/reparo/inicio';
-};
-
-export type IniciarReparoErrors = {
-    /**
-     * Token JWT ausente, invalido ou expirado.
-     */
-    401: ErrorResponse;
-    /**
-     * Recurso nao encontrado.
-     */
-    404: ErrorResponse;
-    /**
-     * Conflito de estado, duplicidade, saldo ou idempotencia.
-     */
-    409: ErrorResponse;
-};
-
-export type IniciarReparoError = IniciarReparoErrors[keyof IniciarReparoErrors];
-
-export type IniciarReparoResponses = {
-    /**
-     * Reparo iniciado.
-     */
-    200: Execucao;
-};
-
-export type IniciarReparoResponse = IniciarReparoResponses[keyof IniciarReparoResponses];
-
 export type ConcluirReparoData = {
     body?: ConclusaoReparoRequest;
     headers: {
@@ -1242,52 +1193,3 @@ export type ConcluirReparoResponses = {
 };
 
 export type ConcluirReparoResponse = ConcluirReparoResponses[keyof ConcluirReparoResponses];
-
-export type CancelarExecucaoData = {
-    body?: CancelamentoRequest;
-    headers: {
-        /**
-         * Identificador de correlacao aceito do cliente e propagado em chamadas HTTP, eventos, logs e traces, conforme contracts/error-model.md.
-         */
-        'X-Correlation-Id'?: string;
-        /**
-         * Chave obrigatoria neste servico para retries seguros em operacoes POST ou PATCH com efeito colateral, conforme contracts/idempotency.md.
-         */
-        'X-Idempotency-Key': string;
-    };
-    path: {
-        execucaoId: string;
-    };
-    query?: never;
-    url: '/execucoes/{execucaoId}/cancelamento';
-};
-
-export type CancelarExecucaoErrors = {
-    /**
-     * Requisicao invalida.
-     */
-    400: ErrorResponse;
-    /**
-     * Token JWT ausente, invalido ou expirado.
-     */
-    401: ErrorResponse;
-    /**
-     * Recurso nao encontrado.
-     */
-    404: ErrorResponse;
-    /**
-     * Conflito de estado, duplicidade, saldo ou idempotencia.
-     */
-    409: ErrorResponse;
-};
-
-export type CancelarExecucaoError = CancelarExecucaoErrors[keyof CancelarExecucaoErrors];
-
-export type CancelarExecucaoResponses = {
-    /**
-     * Execucao cancelada.
-     */
-    200: Execucao;
-};
-
-export type CancelarExecucaoResponse = CancelarExecucaoResponses[keyof CancelarExecucaoResponses];

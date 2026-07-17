@@ -148,7 +148,7 @@ const mockApi = async (page: Page, options: ApiOptions = {}): Promise<void> => {
             posicao: 1,
             criadoEm: '2026-07-15T12:00:00Z',
             atualizadoEm: '2026-07-15T12:00:00Z',
-            acoesPermitidas: ['INICIAR_DIAGNOSTICO', 'CANCELAR'],
+            acoesPermitidas: ['INICIAR_DIAGNOSTICO'],
           },
         ],
       });
@@ -163,7 +163,7 @@ const mockApi = async (page: Page, options: ApiOptions = {}): Promise<void> => {
           prioridade: 10,
           criadoEm: '2026-07-15T12:00:00Z',
           atualizadoEm: '2026-07-15T12:00:00Z',
-          acoesPermitidas: ['INICIAR_DIAGNOSTICO', 'CANCELAR'],
+          acoesPermitidas: ['INICIAR_DIAGNOSTICO'],
         },
       });
       return;
@@ -178,7 +178,7 @@ const mockApi = async (page: Page, options: ApiOptions = {}): Promise<void> => {
           prioridade: 10,
           criadoEm: '2026-07-15T12:00:00Z',
           atualizadoEm: '2026-07-15T13:00:00Z',
-          acoesPermitidas: ['CONCLUIR_DIAGNOSTICO', 'CANCELAR'],
+          acoesPermitidas: ['CONCLUIR_DIAGNOSTICO'],
         },
       });
       return;
@@ -336,7 +336,7 @@ const workOrder = (withService: boolean) => ({
   estado: 'EM_DIAGNOSTICO',
   criadoEm: '2026-07-15T12:00:00Z',
   atualizadoEm: '2026-07-15T13:00:00Z',
-  acoesPermitidas: ['INCLUIR_SERVICO', 'INCLUIR_PECA', 'CONCLUIR_DIAGNOSTICO'],
+  acoesPermitidas: ['INCLUIR_SERVICO', 'INCLUIR_PECA'],
   servicos: withService
     ? [
         {

@@ -115,15 +115,7 @@ export interface WorkOrderPartItem {
   readonly unitPrice: number;
   readonly totalPrice: number;
 }
-export type WorkOrderAction =
-  | 'INICIAR_DIAGNOSTICO'
-  | 'CONCLUIR_DIAGNOSTICO'
-  | 'RETOMAR_DIAGNOSTICO'
-  | 'FINALIZAR'
-  | 'ENTREGAR'
-  | 'INCLUIR_SERVICO'
-  | 'INCLUIR_PECA'
-  | 'CANCELAR';
+export type WorkOrderAction = 'ENTREGAR' | 'INCLUIR_SERVICO' | 'INCLUIR_PECA' | 'CANCELAR';
 
 export interface AddWorkOrderServiceCommand {
   readonly id: string;

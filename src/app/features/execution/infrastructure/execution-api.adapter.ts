@@ -139,9 +139,6 @@ export class ExecutionApiAdapter implements ExecutionGateway {
       command.notes ? { diagnostico: command.notes } : {},
     );
   }
-  iniciarReparo(command: ExecutionCommand): Promise<ExecutionDetails> {
-    return this.executeCommand(command, 'reparo/inicio', {});
-  }
   concluirReparo(command: ExecutionCommand): Promise<ExecutionDetails> {
     return this.executeCommand(
       command,
@@ -149,14 +146,6 @@ export class ExecutionApiAdapter implements ExecutionGateway {
       command.notes ? { observacoes: command.notes } : {},
     );
   }
-  cancelar(command: ExecutionCommand): Promise<ExecutionDetails> {
-    return this.executeCommand(
-      command,
-      'cancelamento',
-      command.notes ? { motivo: command.notes } : {},
-    );
-  }
-
   async consultarServicos(query: CatalogQuery = {}): Promise<Page<CatalogService>> {
     let params = new HttpParams()
       .set('page', String(query.page ?? 0))

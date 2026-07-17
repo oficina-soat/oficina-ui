@@ -1,7 +1,6 @@
 import { inject, InjectionToken } from '@angular/core';
 
 import {
-  CancelExecution,
   CompleteDiagnosis,
   CompleteRepair,
   GetExecution,
@@ -12,7 +11,6 @@ import {
   ListCatalogServices,
   RegisterStockEntry,
   StartDiagnosis,
-  StartRepair,
 } from './application';
 import { ExecutionApiAdapter } from './infrastructure';
 
@@ -32,17 +30,9 @@ export const COMPLETE_DIAGNOSIS = new InjectionToken<CompleteDiagnosis>('COMPLET
   providedIn: 'root',
   factory: () => new CompleteDiagnosis(inject(ExecutionApiAdapter)),
 });
-export const START_REPAIR = new InjectionToken<StartRepair>('START_REPAIR', {
-  providedIn: 'root',
-  factory: () => new StartRepair(inject(ExecutionApiAdapter)),
-});
 export const COMPLETE_REPAIR = new InjectionToken<CompleteRepair>('COMPLETE_REPAIR', {
   providedIn: 'root',
   factory: () => new CompleteRepair(inject(ExecutionApiAdapter)),
-});
-export const CANCEL_EXECUTION = new InjectionToken<CancelExecution>('CANCEL_EXECUTION', {
-  providedIn: 'root',
-  factory: () => new CancelExecution(inject(ExecutionApiAdapter)),
 });
 export const LIST_STOCK_PARTS = new InjectionToken<ListStockParts>('LIST_STOCK_PARTS', {
   providedIn: 'root',
