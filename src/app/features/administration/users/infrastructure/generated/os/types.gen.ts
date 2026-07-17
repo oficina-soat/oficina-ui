@@ -89,7 +89,7 @@ export type OrdemServico = OrdemServicoCreateRequest & {
     acoesPermitidas: Array<AcaoPermitidaOrdemServico>;
 };
 
-export type AcaoPermitidaOrdemServico = 'INICIAR_DIAGNOSTICO' | 'INCLUIR_SERVICO' | 'INCLUIR_PECA' | 'CONCLUIR_DIAGNOSTICO' | 'RETOMAR_DIAGNOSTICO' | 'INICIAR_EXECUCAO' | 'FINALIZAR' | 'ENTREGAR' | 'CANCELAR';
+export type AcaoPermitidaOrdemServico = 'INICIAR_DIAGNOSTICO' | 'INCLUIR_SERVICO' | 'INCLUIR_PECA' | 'CONCLUIR_DIAGNOSTICO' | 'RETOMAR_DIAGNOSTICO' | 'FINALIZAR' | 'ENTREGAR' | 'CANCELAR';
 
 export type IncluirServicoOrdemServicoRequest = {
     servicoId: string;
