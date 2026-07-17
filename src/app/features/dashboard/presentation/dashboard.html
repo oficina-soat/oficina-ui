@@ -18,7 +18,7 @@
   @if (loading() && !hasData()) {
     <app-loading label="Carregando visão operacional" />
   }
-  @if (!loading() && failedBlocks().length === expected().length) {
+  @if (!loading() && !hasData() && failedBlocks().length === expected().length) {
     <app-alert title="Visão operacional indisponível" tone="danger"
       ><p>Não foi possível carregar os indicadores.</p>
       <button class="ui-button ui-button--secondary" type="button" (click)="refresh()">

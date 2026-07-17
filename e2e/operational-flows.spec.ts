@@ -411,6 +411,18 @@ test('shell móvel mantém menu e conteúdo acessíveis por teclado', async ({ p
   await expectNoAccessibilityViolations(page);
 });
 
+test('dashboard móvel respeita o papel e permanece acessível', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 667 });
+  await mockApi(page, { roles: ['mecanico'] });
+  await login(page);
+
+  await expect(page.getByRole('heading', { name: 'Ordens de serviço' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Execução', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Faturamento' })).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Credenciais' })).toHaveCount(0);
+  await expectNoAccessibilityViolations(page);
+});
+
 test('login abre a visão operacional e permite consultar atendimento', async ({ page }) => {
   await mockApi(page);
   await login(page);
