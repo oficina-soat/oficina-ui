@@ -393,7 +393,6 @@ export class WorkOrderDetail implements OnInit {
       state: 'AGUARDANDO_APROVACAO',
       label: 'Concluir diagnóstico',
     },
-    { action: 'INICIAR_EXECUCAO', state: 'EM_EXECUCAO', label: 'Iniciar execução' },
     { action: 'FINALIZAR', state: 'FINALIZADA', label: 'Finalizar serviço' },
     { action: 'ENTREGAR', state: 'ENTREGUE', label: 'Registrar entrega' },
   ];
