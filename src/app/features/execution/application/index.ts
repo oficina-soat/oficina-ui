@@ -30,12 +30,10 @@ export type {
   StockQuery,
 } from './execution-gateway';
 export {
-  CancelExecution,
   CompleteDiagnosis,
   CompleteRepair,
   ExecutionOperationError,
   GetExecution,
   ListExecutionQueue,
   StartDiagnosis,
-  StartRepair,
 } from './execution-gateway';

@@ -26,12 +26,7 @@ export interface ExecutionDetails {
   readonly atualizadoEm: string;
   readonly allowedActions: readonly ExecutionAction[];
 }
-export type ExecutionAction =
-  | 'INICIAR_DIAGNOSTICO'
-  | 'CONCLUIR_DIAGNOSTICO'
-  | 'INICIAR_REPARO'
-  | 'CONCLUIR_REPARO'
-  | 'CANCELAR';
+export type ExecutionAction = 'INICIAR_DIAGNOSTICO' | 'CONCLUIR_DIAGNOSTICO' | 'CONCLUIR_REPARO';
 
 export interface ConsultarFilaQuery {
   readonly status?: ExecutionStatus;
@@ -114,9 +109,7 @@ export interface ExecutionGateway {
   consultarExecucao(id: string): Promise<ExecutionDetails>;
   iniciarDiagnostico(command: ExecutionCommand): Promise<ExecutionDetails>;
   concluirDiagnostico(command: ExecutionCommand): Promise<ExecutionDetails>;
-  iniciarReparo(command: ExecutionCommand): Promise<ExecutionDetails>;
   concluirReparo(command: ExecutionCommand): Promise<ExecutionDetails>;
-  cancelar(command: ExecutionCommand): Promise<ExecutionDetails>;
   consultarServicos(query?: CatalogQuery): Promise<Page<CatalogService>>;
   consultarPecas(query?: StockQuery): Promise<Page<StockPart>>;
   consultarSaldo(partId: string): Promise<StockBalance>;
@@ -201,23 +194,9 @@ export class CompleteDiagnosis {
   }
 }
 
-export class StartRepair {
-  constructor(private readonly gateway: ExecutionGateway) {}
-  execute(command: ExecutionCommand): Promise<ExecutionDetails> {
-    return this.gateway.iniciarReparo(command);
-  }
-}
-
 export class CompleteRepair {
   constructor(private readonly gateway: ExecutionGateway) {}
   execute(command: ExecutionCommand): Promise<ExecutionDetails> {
     return this.gateway.concluirReparo(command);
-  }
-}
-
-export class CancelExecution {
-  constructor(private readonly gateway: ExecutionGateway) {}
-  execute(command: ExecutionCommand): Promise<ExecutionDetails> {
-    return this.gateway.cancelar(command);
   }
 }

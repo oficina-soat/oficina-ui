@@ -25,7 +25,7 @@ const order = {
   state: 'RECEBIDA' as const,
   createdAt: '2026-07-15T12:00:00Z',
   updatedAt: '2026-07-15T12:00:00Z',
-  allowedActions: ['INICIAR_DIAGNOSTICO', 'CANCELAR'] as const,
+  allowedActions: ['CANCELAR'] as const,
   services: [],
   parts: [],
 };
@@ -162,16 +162,9 @@ describe('WorkOrders', () => {
     expect(fixture.nativeElement.textContent).toContain('OS aberta');
     expect(fixture.nativeElement.textContent).toContain('Ações da OS');
     expect(fixture.nativeElement.querySelector('#next-state')).toBeNull();
-    expect(fixture.nativeElement.textContent).toContain('Iniciar diagnóstico');
+    expect(fixture.nativeElement.textContent).not.toContain('Iniciar diagnóstico');
     expect(fixture.nativeElement.textContent).not.toContain('Concluir diagnóstico');
-    const startButton = [...fixture.nativeElement.querySelectorAll('.action-buttons button')].find(
-      (button: HTMLButtonElement) => button.textContent?.includes('Iniciar diagnóstico'),
-    ) as HTMLButtonElement;
-    startButton.click();
-    await fixture.whenStable();
-    expect(change.execute).toHaveBeenCalledWith(
-      expect.objectContaining({ id: 'ordem-1', state: 'EM_DIAGNOSTICO' }),
-    );
+    expect(change.execute).not.toHaveBeenCalled();
     expect(fixture.nativeElement.querySelector('.cancel-action')).toBeTruthy();
     expect(fixture.nativeElement.querySelector('#service-id')).toBeFalsy();
     expect(fixture.nativeElement.querySelector('#part-id')).toBeFalsy();
@@ -181,7 +174,7 @@ describe('WorkOrders', () => {
     const composable = {
       ...order,
       state: 'EM_DIAGNOSTICO' as const,
-      allowedActions: ['INCLUIR_SERVICO', 'INCLUIR_PECA', 'CONCLUIR_DIAGNOSTICO'] as const,
+      allowedActions: ['INCLUIR_SERVICO', 'INCLUIR_PECA'] as const,
     };
     const addService = {
       execute: vi.fn().mockResolvedValue({

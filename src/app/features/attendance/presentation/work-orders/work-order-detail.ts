@@ -385,17 +385,7 @@ export class WorkOrderDetail implements OnInit {
     action: WorkOrderAction;
     state: WorkOrderState;
     label: string;
-  }[] = [
-    { action: 'INICIAR_DIAGNOSTICO', state: 'EM_DIAGNOSTICO', label: 'Iniciar diagnóstico' },
-    { action: 'RETOMAR_DIAGNOSTICO', state: 'EM_DIAGNOSTICO', label: 'Retomar diagnóstico' },
-    {
-      action: 'CONCLUIR_DIAGNOSTICO',
-      state: 'AGUARDANDO_APROVACAO',
-      label: 'Concluir diagnóstico',
-    },
-    { action: 'FINALIZAR', state: 'FINALIZADA', label: 'Finalizar serviço' },
-    { action: 'ENTREGAR', state: 'ENTREGUE', label: 'Registrar entrega' },
-  ];
+  }[] = [{ action: 'ENTREGAR', state: 'ENTREGUE', label: 'Registrar entrega' }];
   readonly stateForm = new FormGroup({
     reason: new FormControl('', { nonNullable: true }),
   });

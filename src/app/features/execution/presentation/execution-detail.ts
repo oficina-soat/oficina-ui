@@ -5,13 +5,11 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { Alert, FormField, Loading } from '../../../shared/ui';
 import {
-  CANCEL_EXECUTION,
   COMPLETE_DIAGNOSIS,
   COMPLETE_REPAIR,
   ExecutionOperationError,
   GET_EXECUTION,
   START_DIAGNOSIS,
-  START_REPAIR,
   type ExecutionDetails,
   type ExecutionStatus,
 } from '../public-api';
@@ -141,22 +139,9 @@ interface ExecutionAction {
                 }
               </div>
             }
-            @if (
-              item.allowedActions.includes('INICIAR_REPARO') ||
-              item.allowedActions.includes('CONCLUIR_REPARO')
-            ) {
+            @if (item.allowedActions.includes('CONCLUIR_REPARO')) {
               <div class="action-group">
                 <h3>Reparo</h3>
-                @if (item.allowedActions.includes('INICIAR_REPARO')) {
-                  <button
-                    class="ui-button ui-button--secondary"
-                    type="button"
-                    [disabled]="saving()"
-                    (click)="run(startRepair, 'Reparo iniciado.')"
-                  >
-                    Iniciar reparo
-                  </button>
-                }
                 @if (item.allowedActions.includes('CONCLUIR_REPARO')) {
                   <app-form-field inputId="repair-notes" label="Observações do reparo">
                     <textarea id="repair-notes" rows="4" [formControl]="repairNotes"></textarea>
@@ -170,22 +155,6 @@ interface ExecutionAction {
                     Concluir reparo
                   </button>
                 }
-              </div>
-            }
-            @if (item.allowedActions.includes('CANCELAR')) {
-              <div class="action-group">
-                <h3>Cancelamento</h3>
-                <app-form-field inputId="cancel-reason" label="Motivo do cancelamento">
-                  <textarea id="cancel-reason" rows="3" [formControl]="cancelReason"></textarea>
-                </app-form-field>
-                <button
-                  class="ui-button ui-button--danger"
-                  type="button"
-                  [disabled]="saving()"
-                  (click)="run(cancelExecution, 'Execução cancelada.', cancelReason.value)"
-                >
-                  Cancelar execução
-                </button>
               </div>
             }
           </section>
@@ -249,9 +218,7 @@ export class ExecutionDetail implements OnInit {
   private readonly get = inject(GET_EXECUTION);
   protected readonly startDiagnosis = inject(START_DIAGNOSIS);
   protected readonly completeDiagnosis = inject(COMPLETE_DIAGNOSIS);
-  protected readonly startRepair = inject(START_REPAIR);
   protected readonly completeRepair = inject(COMPLETE_REPAIR);
-  protected readonly cancelExecution = inject(CANCEL_EXECUTION);
   private readonly id = inject(ActivatedRoute).snapshot.paramMap.get('execucaoId');
   protected readonly execution = signal<ExecutionDetails | null>(null);
   protected readonly loading = signal(false);
@@ -260,7 +227,6 @@ export class ExecutionDetail implements OnInit {
   protected readonly success = signal<string | null>(null);
   readonly diagnosisNotes = new FormControl('', { nonNullable: true });
   readonly repairNotes = new FormControl('', { nonNullable: true });
-  readonly cancelReason = new FormControl('', { nonNullable: true });
 
   ngOnInit(): void {
     void this.load();
