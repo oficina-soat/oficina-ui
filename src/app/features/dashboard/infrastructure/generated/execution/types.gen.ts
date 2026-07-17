@@ -952,7 +952,7 @@ export type ConsultarFilaExecucaoData = {
     path?: never;
     query?: {
         /**
-         * Quando ausente, retorna execucoes em CRIADA e DIAGNOSTICO_CONCLUIDO.
+         * Quando ausente, retorna execucoes em CRIADA, EM_DIAGNOSTICO e EM_REPARO, que possuem acao operacional disponivel.
          */
         status?: StatusExecucao;
     };

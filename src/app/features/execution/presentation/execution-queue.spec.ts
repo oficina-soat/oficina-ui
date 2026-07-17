@@ -9,7 +9,7 @@ const entries = [
   {
     id: 'execucao-2',
     ordemServicoId: 'ordem-2',
-    status: 'DIAGNOSTICO_CONCLUIDO' as const,
+    status: 'EM_DIAGNOSTICO' as const,
     prioridade: 1,
     posicao: 1,
     criadoEm: '2026-07-15T12:00:00Z',
@@ -39,7 +39,7 @@ describe('ExecutionQueue', () => {
     });
 
     const rows = fixture.nativeElement.querySelectorAll('tbody tr');
-    expect(rows[0].textContent).toContain('Diagnóstico concluído');
+    expect(rows[0].textContent).toContain('Em diagnóstico');
     expect(rows[1].textContent).toContain('Criada');
     expect(list.execute).toHaveBeenCalledWith({});
 
