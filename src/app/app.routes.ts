@@ -85,20 +85,20 @@ export const routes: Routes = [
       {
         path: 'fila-execucao',
         canActivate: [roleGuard],
-        data: { roles: ['mecanico'], breadcrumb: 'Fila de execução' },
+        data: { roles: ['mecanico'], breadcrumb: 'Atendimento mecânico' },
         loadComponent: () =>
           import('./features/execution/presentation').then(({ ExecutionQueue }) => ExecutionQueue),
-        title: 'Fila de execução | Oficina SOAT',
+        title: 'Atendimento mecânico | Oficina SOAT',
       },
       {
         path: 'execucoes/:execucaoId',
         canActivate: [roleGuard],
-        data: { roles: ['mecanico'], breadcrumb: 'Execução' },
+        data: { roles: ['mecanico'], breadcrumb: 'Atendimento da OS' },
         loadComponent: () =>
           import('./features/execution/presentation').then(
             ({ ExecutionDetail }) => ExecutionDetail,
           ),
-        title: 'Execução da oficina | Oficina SOAT',
+        title: 'Atendimento da OS | Oficina SOAT',
       },
       {
         path: 'administracao/usuarios',

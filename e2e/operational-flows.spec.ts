@@ -497,14 +497,17 @@ test('fila executa comando idempotente e apresenta estado aceito', async ({ page
   let idempotencyKey: string | null = null;
   await mockApi(page, {
     roles: ['mecanico'],
+    composableOrder: true,
     onExecutionCommand: (route) => {
       idempotencyKey = route.request().headers()['x-idempotency-key'] ?? null;
     },
   });
   await login(page);
-  await page.getByRole('link', { name: 'Fila de execução' }).click();
+  await page.getByRole('link', { name: 'Atendimento mecânico' }).click();
   await expect(page.getByRole('cell', { name: 'Criada' })).toBeVisible();
-  await page.getByRole('link', { name: 'Executar' }).click();
+  await page.getByRole('link', { name: 'Atender' }).click();
+  await expect(page.getByRole('heading', { name: 'Composição técnica da OS' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Incluir serviço' })).toBeVisible();
   await page.getByRole('button', { name: 'Iniciar diagnóstico' }).click();
 
   await expect(page.getByText('Diagnóstico iniciado.')).toBeVisible();
