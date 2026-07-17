@@ -6,6 +6,13 @@ import { resolve } from 'node:path';
 import process from 'node:process';
 
 const contracts = [
+  ['oficina-auth-lambda.yaml', 'src/app/features/dashboard/infrastructure/generated/auth'],
+  ['oficina-os-service.yaml', 'src/app/features/dashboard/infrastructure/generated/os'],
+  [
+    'oficina-execution-service.yaml',
+    'src/app/features/dashboard/infrastructure/generated/execution',
+  ],
+  ['oficina-billing-service.yaml', 'src/app/features/dashboard/infrastructure/generated/billing'],
   ['oficina-auth-lambda.yaml', 'src/app/features/auth/infrastructure/generated'],
   [
     'oficina-auth-lambda.yaml',

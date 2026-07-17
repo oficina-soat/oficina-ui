@@ -1,8 +1,8 @@
 openapi: 3.1.0
 info:
   title: oficina-billing-service API
-  version: 1.1.0
-  description: Contrato REST v1 para orcamentos, aprovacoes, recusas e pagamentos.
+  version: 1.3.0
+  description: Contrato REST v1 para orcamentos, decisoes publicas por capability, recusas e pagamentos.
   license:
     name: Internal
     identifier: LicenseRef-Internal
@@ -13,9 +13,34 @@ security:
 tags:
   - name: Orcamentos
     description: Operacoes de geracao, consulta, aprovacao e recusa de orcamentos.
+  - name: Decisao publica
+    description: Acompanhamento, confirmacao e decisao do cliente por token de capacidade de uso unico.
   - name: Pagamentos
     description: Operacoes de registro, consulta, confirmacao, recusa e cancelamento de pagamentos.
+  - name: Dashboard
+    description: Leitura agregada das atenções de orçamento e pagamento.
 paths:
+  /dashboard/faturamento:
+    get:
+      tags: [Dashboard]
+      summary: Consultar resumo operacional do faturamento
+      operationId: consultarDashboardFaturamento
+      x-required-roles: [administrativo, recepcionista]
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+      responses:
+        "200":
+          description: Snapshot atual de orçamentos e pagamentos que exigem atenção.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardFaturamentoResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
   /orcamentos:
     parameters:
       - $ref: "#/components/parameters/CorrelationId"
@@ -64,6 +89,7 @@ paths:
                     status: GERADO
                     criadoEm: "2026-06-23T15:30:00Z"
                     atualizadoEm: "2026-06-23T15:30:00Z"
+                    acoesPermitidas: [APROVAR, RECUSAR]
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -176,6 +202,89 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+  /ordens-servico/{ordemServicoId}/acompanhar-link:
+    parameters:
+      - $ref: "#/components/parameters/CorrelationId"
+      - $ref: "#/components/parameters/OrdemServicoId"
+      - $ref: "#/components/parameters/ActionToken"
+    get:
+      tags: [Decisao publica]
+      summary: Acompanhar a Ordem de Servico pelo link do cliente
+      operationId: acompanharOrdemServicoPorLink
+      security: []
+      responses:
+        "200":
+          $ref: "#/components/responses/MagicLinkHtml"
+        "401":
+          $ref: "#/components/responses/MagicLinkUnauthorized"
+  /ordens-servico/{ordemServicoId}/aprovar-link:
+    parameters:
+      - $ref: "#/components/parameters/CorrelationId"
+      - $ref: "#/components/parameters/OrdemServicoId"
+    get:
+      tags: [Decisao publica]
+      summary: Abrir a confirmacao de aprovacao do orcamento
+      operationId: abrirAprovacaoOrcamentoPorLink
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/ActionToken"
+      responses:
+        "200":
+          $ref: "#/components/responses/MagicLinkHtml"
+        "401":
+          $ref: "#/components/responses/MagicLinkUnauthorized"
+    post:
+      tags: [Decisao publica]
+      summary: Confirmar a aprovacao do orcamento
+      operationId: confirmarAprovacaoOrcamentoPorLink
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/DecisaoPublicaRequest"
+      responses:
+        "200":
+          $ref: "#/components/responses/MagicLinkHtml"
+        "401":
+          $ref: "#/components/responses/MagicLinkUnauthorized"
+        "409":
+          $ref: "#/components/responses/MagicLinkConflict"
+  /ordens-servico/{ordemServicoId}/recusar-link:
+    parameters:
+      - $ref: "#/components/parameters/CorrelationId"
+      - $ref: "#/components/parameters/OrdemServicoId"
+    get:
+      tags: [Decisao publica]
+      summary: Abrir a confirmacao de recusa do orcamento
+      operationId: abrirRecusaOrcamentoPorLink
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/ActionToken"
+      responses:
+        "200":
+          $ref: "#/components/responses/MagicLinkHtml"
+        "401":
+          $ref: "#/components/responses/MagicLinkUnauthorized"
+    post:
+      tags: [Decisao publica]
+      summary: Confirmar a recusa do orcamento
+      operationId: confirmarRecusaOrcamentoPorLink
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/DecisaoPublicaRequest"
+      responses:
+        "200":
+          $ref: "#/components/responses/MagicLinkHtml"
+        "401":
+          $ref: "#/components/responses/MagicLinkUnauthorized"
+        "409":
+          $ref: "#/components/responses/MagicLinkConflict"
   /pagamentos:
     parameters:
       - $ref: "#/components/parameters/CorrelationId"
@@ -398,6 +507,15 @@ components:
         type: string
         minLength: 8
         maxLength: 128
+    ActionToken:
+      name: actionToken
+      in: query
+      required: true
+      description: Token opaco de capacidade, restrito a acao e nunca registrado em telemetria.
+      schema:
+        type: string
+        minLength: 43
+        maxLength: 128
   headers:
     CorrelationId:
       description: Identificador de correlacao retornado em toda resposta de erro.
@@ -431,6 +549,12 @@ components:
           $ref: "#/components/headers/CorrelationId"
         traceparent:
           $ref: "#/components/headers/Traceparent"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Forbidden:
+      description: Token JWT válido sem um dos papéis exigidos.
       content:
         application/json:
           schema:
@@ -481,7 +605,114 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/ErrorResponse"
+    MagicLinkHtml:
+      description: Pagina HTML segura de acompanhamento, confirmacao ou resultado.
+      headers:
+        X-Correlation-Id:
+          $ref: "#/components/headers/CorrelationId"
+      content:
+        text/html:
+          schema:
+            type: string
+    MagicLinkUnauthorized:
+      description: Link invalido, expirado, incompatível ou ja utilizado; a pagina nao distingue a causa.
+      headers:
+        X-Correlation-Id:
+          $ref: "#/components/headers/CorrelationId"
+      content:
+        text/html:
+          schema:
+            type: string
+    MagicLinkConflict:
+      description: O orcamento nao aceita mais a decisao solicitada.
+      headers:
+        X-Correlation-Id:
+          $ref: "#/components/headers/CorrelationId"
+      content:
+        text/html:
+          schema:
+            type: string
   schemas:
+    DashboardFaturamentoResponse:
+      type: object
+      required: [generatedAt, dataAsOf, contagensOrcamentos, contagensPagamentos, atencoes]
+      properties:
+        generatedAt:
+          type: string
+          format: date-time
+        dataAsOf:
+          type: string
+          format: date-time
+          description: Limite temporal do snapshot atual. A primeira versão não oferece séries históricas.
+        refreshAfterSeconds:
+          type: integer
+          minimum: 15
+        contagensOrcamentos:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContagemOrcamentoPorStatus"
+        contagensPagamentos:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContagemPagamentoPorStatus"
+        atencoes:
+          type: array
+          maxItems: 5
+          items:
+            $ref: "#/components/schemas/FaturamentoAtencaoDashboard"
+    ContagemOrcamentoPorStatus:
+      type: object
+      required: [status, quantidade]
+      properties:
+        status:
+          $ref: "#/components/schemas/StatusOrcamento"
+        quantidade:
+          type: integer
+          format: int64
+          minimum: 0
+    ContagemPagamentoPorStatus:
+      type: object
+      required: [status, quantidade]
+      properties:
+        status:
+          $ref: "#/components/schemas/StatusPagamento"
+        quantidade:
+          type: integer
+          format: int64
+          minimum: 0
+    FaturamentoAtencaoDashboard:
+      type: object
+      required: [tipo, ordemServicoId, referenciaId, status, valor, atualizadoEm, acoesPermitidas]
+      properties:
+        tipo:
+          type: string
+          enum: [ORCAMENTO, PAGAMENTO]
+        ordemServicoId:
+          type: string
+          format: uuid
+        referenciaId:
+          type: string
+          format: uuid
+          description: Identificador do orçamento ou pagamento, conforme `tipo`.
+        status:
+          description: Valor canônico conforme `tipo`.
+          oneOf:
+            - $ref: "#/components/schemas/StatusOrcamento"
+            - $ref: "#/components/schemas/StatusPagamento"
+        valor:
+          type: number
+          format: decimal
+          minimum: 0
+        atualizadoEm:
+          type: string
+          format: date-time
+        acoesPermitidas:
+          type: array
+          items:
+            oneOf:
+              - $ref: "#/components/schemas/AcaoPermitidaOrcamento"
+              - $ref: "#/components/schemas/AcaoPermitidaPagamento"
+          description: Ações canônicas do recurso indicado por `tipo`.
     GerarOrcamentoRequest:
       type: object
       required: [ordemServicoId]
@@ -494,6 +725,18 @@ components:
       properties:
         motivo:
           type: string
+    DecisaoPublicaRequest:
+      type: object
+      required: [actionToken]
+      properties:
+        actionToken:
+          type: string
+          minLength: 43
+          maxLength: 128
+          description: Token opaco submetido pelo formulario de confirmacao; nunca deve ser logado.
+        motivo:
+          type: string
+          maxLength: 500
     Orcamento:
       type: object
       required: [orcamentoId, ordemServicoId, itens, valorTotal, status, criadoEm, atualizadoEm, acoesPermitidas]

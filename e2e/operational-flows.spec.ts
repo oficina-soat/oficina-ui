@@ -47,6 +47,64 @@ const mockApi = async (page: Page, options: ApiOptions = {}): Promise<void> => {
       await route.fulfill({ json: { items: [], page: 0, size: 20, totalItems: 8, totalPages: 1 } });
       return;
     }
+    if (url.pathname === '/api/v1/dashboard/ordens-servico') {
+      await route.fulfill({
+        json: {
+          generatedAt: '2026-07-17T12:00:01Z',
+          dataAsOf: '2026-07-17T12:00:00Z',
+          contagensPorEstado: [{ estado: 'RECEBIDA', quantidade: 8 }],
+          atencoes: [],
+        },
+      });
+      return;
+    }
+    if (url.pathname === '/api/v1/dashboard/execucao') {
+      await route.fulfill({
+        json: {
+          generatedAt: '2026-07-17T12:00:01Z',
+          dataAsOf: '2026-07-17T12:00:00Z',
+          contagensPorStatus: [{ status: 'CRIADA', quantidade: 2 }],
+          totalFila: 2,
+          proximasExecucoes: [],
+          estoqueAtencoes: [],
+        },
+      });
+      return;
+    }
+    if (url.pathname === '/api/v1/dashboard/faturamento') {
+      await route.fulfill({
+        json: {
+          generatedAt: '2026-07-17T12:00:01Z',
+          dataAsOf: '2026-07-17T12:00:00Z',
+          contagensOrcamentos: [{ status: 'GERADO', quantidade: 1 }],
+          contagensPagamentos: [{ status: 'CRIADO', quantidade: 1 }],
+          atencoes: [],
+        },
+      });
+      return;
+    }
+    if (url.pathname === '/api/v1/dashboard/usuarios') {
+      await route.fulfill({
+        json: {
+          generatedAt: '2026-07-17T12:00:01Z',
+          dataAsOf: '2026-07-17T12:00:00Z',
+          contagensPorStatus: [{ status: 'ATIVO', quantidade: 3 }],
+          atencoes: [],
+        },
+      });
+      return;
+    }
+    if (url.pathname === '/auth/dashboard/credenciais') {
+      await route.fulfill({
+        json: {
+          generatedAt: '2026-07-17T12:00:01Z',
+          dataAsOf: '2026-07-17T12:00:00Z',
+          contagensPorStatus: [{ status: 'ATIVA', quantidade: 3 }],
+          atencoes: [],
+        },
+      });
+      return;
+    }
     if (url.pathname === '/api/v1/usuarios' && request.method() === 'GET') {
       await route.fulfill({
         json: { items: [userDto('ATIVO')], page: 0, size: 20, totalItems: 1, totalPages: 1 },
@@ -359,9 +417,10 @@ test('login abre a visão operacional e permite consultar atendimento', async ({
 
   await expect(page).toHaveURL(/\/session$/);
   await expect(page.getByRole('heading', { name: 'Visão operacional' })).toBeVisible();
-  await expect(page.getByText('8', { exact: true })).toHaveCount(2);
-  await page.getByRole('link', { name: 'Clientes', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Clientes', exact: true })).toBeVisible();
+  await expect(page.getByText('8', { exact: true })).toBeVisible();
+  await expect(page.getByText('Recebida', { exact: true })).toBeVisible();
+  await page.getByRole('link', { name: 'Ver ordens', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Ordens de serviço', exact: true })).toBeVisible();
 });
 
 test('login rejeitado apresenta erro sem criar sessão', async ({ page }) => {

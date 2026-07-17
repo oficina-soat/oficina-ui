@@ -25,7 +25,8 @@ export const routes: Routes = [
       { path: '', pathMatch: 'full', redirectTo: 'session' },
       {
         path: 'session',
-        loadComponent: () => import('./layout/dashboard').then(({ Dashboard }) => Dashboard),
+        loadComponent: () =>
+          import('./features/dashboard/presentation/dashboard').then(({ Dashboard }) => Dashboard),
         title: 'Visão operacional | Oficina SOAT',
         data: { breadcrumb: 'Início' },
       },

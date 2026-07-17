@@ -4,6 +4,54 @@ export type ClientOptions = {
     baseUrl: `${string}://${string}/api/v1` | (string & {});
 };
 
+export type DashboardMetadata = {
+    generatedAt: string;
+    /**
+     * Limite temporal do snapshot atual. A primeira versão não oferece séries históricas.
+     */
+    dataAsOf: string;
+    /**
+     * Intervalo técnico sugerido; quando ausente, o cliente oferece somente atualização manual.
+     */
+    refreshAfterSeconds?: number;
+};
+
+export type DashboardOrdensServicoResponse = DashboardMetadata & {
+    contagensPorEstado: Array<ContagemOrdemServicoPorEstado>;
+    atencoes: Array<OrdemServicoAtencaoDashboard>;
+};
+
+export type ContagemOrdemServicoPorEstado = {
+    estado: EstadoOrdemServico;
+    quantidade: number;
+};
+
+export type OrdemServicoAtencaoDashboard = {
+    ordemServicoId: string;
+    estado: EstadoOrdemServico;
+    descricaoProblema: string;
+    entrouNoEstadoEm: string;
+    acoesPermitidas: Array<AcaoPermitidaOrdemServico>;
+};
+
+export type DashboardUsuariosResponse = DashboardMetadata & {
+    contagensPorStatus: Array<ContagemUsuarioPorStatus>;
+    atencoes: Array<UsuarioAtencaoDashboard>;
+};
+
+export type ContagemUsuarioPorStatus = {
+    status: StatusUsuario;
+    quantidade: number;
+};
+
+export type UsuarioAtencaoDashboard = {
+    usuarioId: string;
+    nome: string;
+    status: StatusUsuario;
+    atualizadoEm: string;
+    acoesPermitidas: Array<AcaoPermitidaUsuario>;
+};
+
 export type UsuarioCreateRequest = {
     nome: string;
     /**
@@ -190,6 +238,84 @@ export type IdempotencyKey = string;
 export type Page = number;
 
 export type Size = number;
+
+export type ConsultarDashboardOrdensServicoData = {
+    body?: never;
+    headers?: {
+        /**
+         * Identificador de correlacao aceito do cliente e propagado em chamadas HTTP, eventos, logs e traces, conforme contracts/error-model.md.
+         */
+        'X-Correlation-Id'?: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/dashboard/ordens-servico';
+};
+
+export type ConsultarDashboardOrdensServicoErrors = {
+    /**
+     * Token JWT ausente, invalido ou expirado.
+     */
+    401: ErrorResponse;
+    /**
+     * Token JWT válido sem o papel administrativo exigido pela operação.
+     */
+    403: ErrorResponse;
+    /**
+     * Dependencia necessaria para concluir a operacao esta indisponivel.
+     */
+    503: ErrorResponse;
+};
+
+export type ConsultarDashboardOrdensServicoError = ConsultarDashboardOrdensServicoErrors[keyof ConsultarDashboardOrdensServicoErrors];
+
+export type ConsultarDashboardOrdensServicoResponses = {
+    /**
+     * Snapshot atual das ordens e da fila de atenção, já agregado e ordenado pelo OS Service.
+     */
+    200: DashboardOrdensServicoResponse;
+};
+
+export type ConsultarDashboardOrdensServicoResponse = ConsultarDashboardOrdensServicoResponses[keyof ConsultarDashboardOrdensServicoResponses];
+
+export type ConsultarDashboardUsuariosData = {
+    body?: never;
+    headers?: {
+        /**
+         * Identificador de correlacao aceito do cliente e propagado em chamadas HTTP, eventos, logs e traces, conforme contracts/error-model.md.
+         */
+        'X-Correlation-Id'?: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/dashboard/usuarios';
+};
+
+export type ConsultarDashboardUsuariosErrors = {
+    /**
+     * Token JWT ausente, invalido ou expirado.
+     */
+    401: ErrorResponse;
+    /**
+     * Token JWT válido sem o papel administrativo exigido pela operação.
+     */
+    403: ErrorResponse;
+    /**
+     * Dependencia necessaria para concluir a operacao esta indisponivel.
+     */
+    503: ErrorResponse;
+};
+
+export type ConsultarDashboardUsuariosError = ConsultarDashboardUsuariosErrors[keyof ConsultarDashboardUsuariosErrors];
+
+export type ConsultarDashboardUsuariosResponses = {
+    /**
+     * Snapshot atual dos cadastros operacionais que exigem atenção administrativa.
+     */
+    200: DashboardUsuariosResponse;
+};
+
+export type ConsultarDashboardUsuariosResponse = ConsultarDashboardUsuariosResponses[keyof ConsultarDashboardUsuariosResponses];
 
 export type ConsultarUsuariosData = {
     body?: never;

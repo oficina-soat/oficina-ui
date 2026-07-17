@@ -6,9 +6,11 @@ import { describe, expect, it, vi } from 'vitest';
 import { SessionStore } from '../core/auth/session.store';
 import { ApiAvailabilityStore } from '../core/http/api-availability.store';
 import { LOGOUT_USER } from '../features/auth/public-api';
-import { LIST_CLIENTS, LIST_WORK_ORDERS } from '../features/attendance/public-api';
-import { Dashboard } from './dashboard';
+import { LOAD_OPERATIONAL_DASHBOARD } from '../features/dashboard/public-api';
+import { Dashboard } from '../features/dashboard/presentation/dashboard';
 import { OperationalShell } from './operational-shell';
+
+registerLocaleData(localePt);
 
 const tokenWithRoles = (roles: readonly string[]): string =>
   `header.${btoa(JSON.stringify({ sub: '84191404067', groups: roles })).replace(/=/g, '')}.signature`;
@@ -57,26 +59,15 @@ describe('OperationalShell', () => {
         ]),
         { provide: LOGOUT_USER, useValue: { execute: vi.fn() } },
         {
-          provide: LIST_CLIENTS,
+          provide: LOAD_OPERATIONAL_DASHBOARD,
           useValue: {
             execute: vi.fn().mockResolvedValue({
-              items: [],
-              page: 0,
-              size: 1,
-              totalItems: 8,
-              totalPages: 8,
-            }),
-          },
-        },
-        {
-          provide: LIST_WORK_ORDERS,
-          useValue: {
-            execute: vi.fn().mockResolvedValue({
-              items: [],
-              page: 0,
-              size: 3,
-              totalItems: 8,
-              totalPages: 3,
+              workOrders: {
+                generatedAt: '2026-07-17T12:00:01Z',
+                dataAsOf: '2026-07-17T12:00:00Z',
+                counts: [{ key: 'RECEBIDA', quantity: 8 }],
+                attentions: [],
+              },
             }),
           },
         },
@@ -88,7 +79,9 @@ describe('OperationalShell', () => {
       harness.detectChanges();
       expect(harness.routeNativeElement?.textContent).toContain('Visão operacional');
     });
-    expect(harness.routeNativeElement?.textContent).toContain('Clientes');
+    expect(harness.routeNativeElement?.textContent).toContain('Ordens de serviço');
     expect(harness.routeNativeElement?.textContent).toContain('8');
   });
 });
+import { registerLocaleData } from '@angular/common';
+import localePt from '@angular/common/locales/pt';
