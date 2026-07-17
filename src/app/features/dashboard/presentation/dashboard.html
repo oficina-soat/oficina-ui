@@ -1,0 +1,284 @@
+<section class="dashboard" aria-labelledby="dashboard-title" aria-busy="{{ loading() }}">
+  <header class="dashboard__header">
+    <div>
+      <p class="eyebrow">Oficina SOAT</p>
+      <h1 id="dashboard-title">Visão operacional</h1>
+      <p>Indicadores atuais e pendências selecionadas por cada serviço.</p>
+    </div>
+    <button
+      class="ui-button ui-button--secondary"
+      type="button"
+      (click)="refresh()"
+      [disabled]="loading()"
+    >
+      Atualizar
+    </button>
+  </header>
+
+  @if (loading() && !hasData()) {
+    <app-loading label="Carregando visão operacional" />
+  }
+  @if (!loading() && failedBlocks().length === expected().length) {
+    <app-alert title="Visão operacional indisponível" tone="danger"
+      ><p>Não foi possível carregar os indicadores.</p>
+      <button class="ui-button ui-button--secondary" type="button" (click)="refresh()">
+        Tentar novamente
+      </button></app-alert
+    >
+  } @else {
+    @if (failedBlocks().length > 0) {
+      <app-alert title="Alguns indicadores estão indisponíveis" tone="warning"
+        ><p>
+          Os demais blocos continuam válidos e podem ter horários de referência diferentes.
+        </p></app-alert
+      >
+    }
+
+    @if (data().workOrders; as snapshot) {
+      <section class="panel" aria-labelledby="orders-title">
+        <div class="panel__heading">
+          <div>
+            <h2 id="orders-title">Ordens de serviço</h2>
+            <small>Dados até {{ snapshot.dataAsOf | date: 'short' : '' : 'pt-BR' }}</small>
+          </div>
+          <a routerLink="/ordens-servico">Ver ordens</a>
+        </div>
+        <div class="cards">
+          @for (count of snapshot.counts; track count.key) {
+            <article class="card">
+              <span>{{ label(count.key) }}</span
+              ><strong>{{ count.quantity }}</strong>
+            </article>
+          }
+        </div>
+        <h3>Precisam de atenção</h3>
+        @if (snapshot.attentions.length === 0) {
+          <p class="empty">Nenhuma ordem requer atenção.</p>
+        } @else {
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Ordem</th>
+                  <th>Estado</th>
+                  <th>Problema</th>
+                  <th>Desde</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of snapshot.attentions; track item.id) {
+                  <tr>
+                    <td>
+                      <a [routerLink]="['/ordens-servico', item.id]">{{ shortId(item.id) }}</a>
+                    </td>
+                    <td>{{ label(item.state) }}</td>
+                    <td>{{ item.description }}</td>
+                    <td>{{ item.enteredStateAt | date: 'short' : '' : 'pt-BR' }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </section>
+    }
+
+    @if (data().execution; as snapshot) {
+      <section class="panel" aria-labelledby="execution-title">
+        <div class="panel__heading">
+          <div>
+            <h2 id="execution-title">Execução</h2>
+            <small>Dados até {{ snapshot.dataAsOf | date: 'short' : '' : 'pt-BR' }}</small>
+          </div>
+          <a routerLink="/fila-execucao">Ver fila ({{ snapshot.queueTotal }})</a>
+        </div>
+        <div class="cards">
+          @for (count of snapshot.counts; track count.key) {
+            <article class="card">
+              <span>{{ label(count.key) }}</span
+              ><strong>{{ count.quantity }}</strong>
+            </article>
+          }
+        </div>
+        <h3>Próximas execuções</h3>
+        @if (snapshot.nextExecutions.length === 0) {
+          <p class="empty">A fila está vazia.</p>
+        } @else {
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Posição</th>
+                  <th>Ordem</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of snapshot.nextExecutions; track item.id) {
+                  <tr>
+                    <td>{{ item.position }}</td>
+                    <td>
+                      <a [routerLink]="['/execucoes', item.id]">{{ shortId(item.workOrderId) }}</a>
+                    </td>
+                    <td>{{ label(item.status) }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+        @if (snapshot.stockAttentions.length > 0) {
+          <h3>Estoque requer atenção</h3>
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Peça</th>
+                  <th>Saldo</th>
+                  <th>Limite</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of snapshot.stockAttentions; track item.id) {
+                  <tr>
+                    <td>{{ item.name }}</td>
+                    <td>{{ item.balance }}</td>
+                    <td>{{ item.threshold }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </section>
+    }
+
+    @if (data().billing; as snapshot) {
+      <section class="panel" aria-labelledby="billing-title">
+        <div class="panel__heading">
+          <div>
+            <h2 id="billing-title">Faturamento</h2>
+            <small>Dados até {{ snapshot.dataAsOf | date: 'short' : '' : 'pt-BR' }}</small>
+          </div>
+          <a routerLink="/faturamento">Abrir faturamento</a>
+        </div>
+        <div class="card-groups">
+          <div>
+            <h3>Orçamentos</h3>
+            <div class="cards">
+              @for (count of snapshot.budgetCounts; track count.key) {
+                <article class="card">
+                  <span>{{ label(count.key) }}</span
+                  ><strong>{{ count.quantity }}</strong>
+                </article>
+              }
+            </div>
+          </div>
+          <div>
+            <h3>Pagamentos</h3>
+            <div class="cards">
+              @for (count of snapshot.paymentCounts; track count.key) {
+                <article class="card">
+                  <span>{{ label(count.key) }}</span
+                  ><strong>{{ count.quantity }}</strong>
+                </article>
+              }
+            </div>
+          </div>
+        </div>
+        <h3>Precisam de atenção</h3>
+        @if (snapshot.attentions.length === 0) {
+          <p class="empty">Nenhuma pendência financeira.</p>
+        } @else {
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Tipo</th>
+                  <th>Ordem</th>
+                  <th>Status</th>
+                  <th>Valor</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of snapshot.attentions; track item.referenceId) {
+                  <tr>
+                    <td>{{ label(item.type) }}</td>
+                    <td>
+                      <a [routerLink]="['/ordens-servico', item.workOrderId]">{{
+                        shortId(item.workOrderId)
+                      }}</a>
+                    </td>
+                    <td>{{ label(item.status) }}</td>
+                    <td>{{ item.value | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </section>
+    }
+
+    @if (data().users; as users) {
+      <section class="panel" aria-labelledby="users-title">
+        <div class="panel__heading">
+          <div>
+            <h2 id="users-title">Usuários operacionais</h2>
+            <small>Dados até {{ users.dataAsOf | date: 'short' : '' : 'pt-BR' }}</small>
+          </div>
+          <a routerLink="/administracao/usuarios">Administrar</a>
+        </div>
+        <div class="cards">
+          @for (count of users.counts; track count.key) {
+            <article class="card">
+              <span>{{ label(count.key) }}</span
+              ><strong>{{ count.quantity }}</strong>
+            </article>
+          }
+        </div>
+        @if (users.attentions.length > 0) {
+          <h3>Precisam de atenção</h3>
+          <ul class="attention-list">
+            @for (item of users.attentions; track item.id) {
+              <li>
+                <a [routerLink]="['/administracao/usuarios', item.id]">{{ item.name }}</a
+                ><span>{{ label(item.status) }}</span>
+              </li>
+            }
+          </ul>
+        }
+      </section>
+    }
+    @if (data().credentials; as credentials) {
+      <section class="panel" aria-labelledby="credentials-title">
+        <div class="panel__heading">
+          <div>
+            <h2 id="credentials-title">Credenciais</h2>
+            <small>Dados até {{ credentials.dataAsOf | date: 'short' : '' : 'pt-BR' }}</small>
+          </div>
+        </div>
+        <div class="cards">
+          @for (count of credentials.counts; track count.key) {
+            <article class="card">
+              <span>{{ label(count.key) }}</span
+              ><strong>{{ count.quantity }}</strong>
+            </article>
+          }
+        </div>
+        @if (credentials.attentions.length > 0) {
+          <h3>Precisam de atenção</h3>
+          <ul class="attention-list">
+            @for (item of credentials.attentions; track item.id) {
+              <li>
+                <a [routerLink]="['/administracao/usuarios', item.id]"
+                  >Usuário {{ shortId(item.id) }}</a
+                ><span>{{ label(item.status) }}</span>
+              </li>
+            }
+          </ul>
+        }
+      </section>
+    }
+  }
+</section>

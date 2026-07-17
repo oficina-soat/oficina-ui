@@ -4,6 +4,30 @@ export type ClientOptions = {
     baseUrl: `${string}://${string}` | (string & {});
 };
 
+export type DashboardCredenciaisResponse = {
+    generatedAt: string;
+    /**
+     * Limite temporal do snapshot atual. A primeira versão não oferece séries históricas.
+     */
+    dataAsOf: string;
+    refreshAfterSeconds?: number;
+    contagensPorStatus: Array<ContagemCredencialPorStatus>;
+    atencoes: Array<CredencialAtencaoDashboard>;
+};
+
+export type ContagemCredencialPorStatus = {
+    status: StatusCredencial;
+    quantidade: number;
+};
+
+export type CredencialAtencaoDashboard = {
+    usuarioId: string;
+    status: StatusCredencial;
+    atualizadoEm: string;
+    expiresAt?: string;
+    acoesPermitidas: Array<AcaoPermitidaCredencial>;
+};
+
 export type AutenticacaoRequest = {
     cpf: string;
     password: string;
@@ -32,10 +56,14 @@ export type AtivacaoRequest = {
 };
 
 export type CredencialStatusResponse = {
-    status: 'NAO_ATIVADA' | 'ATIVACAO_PENDENTE' | 'ATIVA';
+    status: StatusCredencial;
     expiresAt?: string;
-    acoesPermitidas: Array<'SOLICITAR_ATIVACAO'>;
+    acoesPermitidas: Array<AcaoPermitidaCredencial>;
 };
+
+export type StatusCredencial = 'NAO_ATIVADA' | 'ATIVACAO_PENDENTE' | 'ATIVA';
+
+export type AcaoPermitidaCredencial = 'SOLICITAR_ATIVACAO';
 
 export type AuthError = {
     message: string;
@@ -51,6 +79,45 @@ export type UsuarioId = string;
  * Identificador propagado para resposta, logs e traces.
  */
 export type CorrelationId = string;
+
+export type ConsultarDashboardCredenciaisData = {
+    body?: never;
+    headers?: {
+        /**
+         * Identificador propagado para resposta, logs e traces.
+         */
+        'X-Correlation-Id'?: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/auth/dashboard/credenciais';
+};
+
+export type ConsultarDashboardCredenciaisErrors = {
+    /**
+     * Credenciais ausentes, inválidas ou usuário não autorizado a autenticar.
+     */
+    401: AuthError;
+    /**
+     * JWT válido sem o papel administrativo.
+     */
+    403: AuthError;
+    /**
+     * Snapshot administrativo temporariamente indisponível.
+     */
+    503: AuthError;
+};
+
+export type ConsultarDashboardCredenciaisError = ConsultarDashboardCredenciaisErrors[keyof ConsultarDashboardCredenciaisErrors];
+
+export type ConsultarDashboardCredenciaisResponses = {
+    /**
+     * Snapshot sanitizado das credenciais que exigem atenção.
+     */
+    200: DashboardCredenciaisResponse;
+};
+
+export type ConsultarDashboardCredenciaisResponse = ConsultarDashboardCredenciaisResponses[keyof ConsultarDashboardCredenciaisResponses];
 
 export type AutenticarUsuarioData = {
     body: AutenticacaoRequest;
