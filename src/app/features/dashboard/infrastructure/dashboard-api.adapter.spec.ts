@@ -26,6 +26,7 @@ describe('DashboardApiAdapter', () => {
     http.expectOne('https://api.example/api/v1/dashboard/ordens-servico').flush({
       generatedAt: '2026-07-17T12:00:01Z',
       dataAsOf: '2026-07-17T12:00:00Z',
+      refreshAfterSeconds: 30,
       contagensPorEstado: [{ estado: 'RECEBIDA', quantidade: 4 }],
       atencoes: [
         {
@@ -60,9 +61,24 @@ describe('DashboardApiAdapter', () => {
           acoesPermitidas: [],
         },
       ],
-      estoqueAtencoes: [],
+      estoqueAtencoes: [
+        {
+          pecaId: 'part-1',
+          nome: 'Filtro',
+          saldoAtual: 1,
+          limiteReposicao: 2,
+          atualizadoEm: '2026-07-17T10:00:00Z',
+        },
+      ],
     });
-    expect((await executionPromise).nextExecutions[0]).toMatchObject({ id: 'ex-1', position: 1 });
+    const execution = await executionPromise;
+    expect(execution.nextExecutions[0]).toMatchObject({ id: 'ex-1', position: 1 });
+    expect(execution.stockAttentions[0]).toEqual({
+      id: 'part-1',
+      name: 'Filtro',
+      balance: 1,
+      threshold: 2,
+    });
 
     const billingPromise = adapter.billing();
     http.expectOne('https://api.example/api/v1/dashboard/faturamento').flush({
@@ -70,27 +86,59 @@ describe('DashboardApiAdapter', () => {
       dataAsOf: '2026-07-17T12:00:00Z',
       contagensOrcamentos: [],
       contagensPagamentos: [],
-      atencoes: [],
+      atencoes: [
+        {
+          tipo: 'PAGAMENTO',
+          ordemServicoId: 'os-1',
+          referenciaId: 'payment-1',
+          status: 'RECUSADO',
+          valor: 150,
+          atualizadoEm: '2026-07-17T11:00:00Z',
+          acoesPermitidas: [],
+        },
+      ],
     });
-    expect((await billingPromise).attentions).toEqual([]);
+    expect((await billingPromise).attentions[0]).toMatchObject({
+      type: 'PAGAMENTO',
+      referenceId: 'payment-1',
+      value: 150,
+    });
 
     const usersPromise = adapter.users();
     http.expectOne('https://api.example/api/v1/dashboard/usuarios').flush({
       generatedAt: '2026-07-17T12:00:01Z',
       dataAsOf: '2026-07-17T12:00:00Z',
       contagensPorStatus: [],
-      atencoes: [],
+      atencoes: [
+        {
+          usuarioId: 'user-1',
+          nome: 'Maria',
+          status: 'BLOQUEADO',
+          atualizadoEm: '2026-07-17T11:00:00Z',
+          acoesPermitidas: ['REATIVAR'],
+        },
+      ],
     });
-    expect((await usersPromise).counts).toEqual([]);
+    expect((await usersPromise).attentions[0]).toMatchObject({ id: 'user-1', name: 'Maria' });
 
     const credentialsPromise = adapter.credentials();
     http.expectOne('https://auth.example/auth/dashboard/credenciais').flush({
       generatedAt: '2026-07-17T12:00:01Z',
       dataAsOf: '2026-07-17T12:00:00Z',
       contagensPorStatus: [],
-      atencoes: [],
+      atencoes: [
+        {
+          usuarioId: 'user-1',
+          status: 'ATIVACAO_PENDENTE',
+          atualizadoEm: '2026-07-17T11:00:00Z',
+          acoesPermitidas: [],
+        },
+      ],
     });
-    expect((await credentialsPromise).counts).toEqual([]);
+    expect((await credentialsPromise).attentions[0]).toMatchObject({
+      id: 'user-1',
+      status: 'ATIVACAO_PENDENTE',
+    });
     http.verify();
   });
 });

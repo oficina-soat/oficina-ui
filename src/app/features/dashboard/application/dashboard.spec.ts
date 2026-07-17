@@ -34,4 +34,13 @@ describe('LoadOperationalDashboard', () => {
     expect(result.workOrders).toBeDefined();
     expect(result.credentials).toBeUndefined();
   });
+
+  it('consulta somente ordens e execução para o mecânico', async () => {
+    const port = gateway();
+    const result = await new LoadOperationalDashboard(port).execute(['mecanico']);
+
+    expect(Object.keys(result)).toEqual(['workOrders', 'execution']);
+    expect(port.billing).not.toHaveBeenCalled();
+    expect(port.credentials).not.toHaveBeenCalled();
+  });
 });
