@@ -76,7 +76,7 @@ export class OperationalShell {
       items.push({ label: 'Estoque', href: '/estoque' });
     }
     if (this.session.hasAnyRole(['mecanico'])) {
-      items.push({ label: 'Fila de execução', href: '/fila-execucao' });
+      items.push({ label: 'Atendimento mecânico', href: '/fila-execucao' });
     }
     return items;
   });

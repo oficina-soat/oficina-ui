@@ -94,7 +94,7 @@ const failureMessages = {
                   <td>{{ shortId(entry.ordemServicoId) }}</td>
                   <td>{{ statusLabel(entry.status) }}</td>
                   <td>{{ entry.criadoEm | date: 'dd/MM/yyyy HH:mm' }}</td>
-                  <td><a [routerLink]="['/execucoes', entry.id]">Executar</a></td>
+                  <td><a [routerLink]="['/execucoes', entry.id]">Atender</a></td>
                 </tr>
               }
             </tbody>
