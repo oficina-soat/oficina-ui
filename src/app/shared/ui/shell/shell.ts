@@ -16,6 +16,7 @@ import { filter, skip } from 'rxjs';
 export interface NavigationItem {
   readonly label: string;
   readonly href: string;
+  readonly external?: boolean;
 }
 
 @Component({
@@ -45,14 +46,20 @@ export interface NavigationItem {
       <aside class="ui-shell__sidebar" [class.ui-shell__sidebar--open]="menuOpen()">
         <nav id="primary-navigation" aria-label="Navegação principal">
           @for (item of navigation(); track item.href) {
-            <a
-              [routerLink]="item.href"
-              routerLinkActive="ui-shell__link--current"
-              [routerLinkActiveOptions]="{ exact: item.href === '/session' }"
-              (click)="menuOpen.set(false)"
-            >
-              {{ item.label }}
-            </a>
+            @if (item.external) {
+              <a [href]="item.href" target="_blank" rel="noopener" (click)="menuOpen.set(false)">
+                {{ item.label }} ↗
+              </a>
+            } @else {
+              <a
+                [routerLink]="item.href"
+                routerLinkActive="ui-shell__link--current"
+                [routerLinkActiveOptions]="{ exact: item.href === '/session' }"
+                (click)="menuOpen.set(false)"
+              >
+                {{ item.label }}
+              </a>
+            }
           }
         </nav>
       </aside>

@@ -71,6 +71,7 @@ export class OperationalShell {
     }
     if (this.session.hasAnyRole(['administrativo', 'recepcionista'])) {
       items.push({ label: 'Faturamento', href: '/faturamento' });
+      items.push({ label: 'E-mails do lab', href: '/mailhog/', external: true });
     }
     if (this.session.hasAnyRole(['administrativo', 'mecanico'])) {
       items.push({ label: 'Estoque', href: '/estoque' });
