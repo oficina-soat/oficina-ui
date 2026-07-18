@@ -115,17 +115,40 @@ export type CancelamentoRequest = {
     motivo?: string;
 };
 
+export type MercadoPagoWebhookRequest = {
+    action: 'payment.created' | 'payment.updated';
+    api_version?: string;
+    data: {
+        id: string;
+    };
+    date_created?: string;
+    id?: string | number;
+    live_mode?: boolean;
+    type: 'payment';
+};
+
 export type Pagamento = PagamentoCreateRequest & {
     pagamentoId: string;
     status: StatusPagamento;
     provedor?: string;
     transacaoExternaId?: string;
+    instrucoesPix?: InstrucoesPix;
     criadoEm: string;
     atualizadoEm: string;
     acoesPermitidas: Array<AcaoPermitidaPagamento>;
 };
 
-export type AcaoPermitidaPagamento = 'CONFIRMAR' | 'RECUSAR' | 'CANCELAR';
+export type AcaoPermitidaPagamento = 'ATUALIZAR_STATUS' | 'CONFIRMAR' | 'RECUSAR' | 'CANCELAR';
+
+/**
+ * Dados transitórios da cobrança PIX. Não devem aparecer em logs, traces ou métricas.
+ */
+export type InstrucoesPix = {
+    copiaECola: string;
+    qrCodeBase64?: string;
+    ticketUrl?: string;
+    expiraEm?: string;
+};
 
 export type MetodoPagamento = 'PIX' | 'CARTAO_CREDITO' | 'CARTAO_DEBITO' | 'DINHEIRO';
 
@@ -173,6 +196,23 @@ export type IdempotencyKey = string;
  * Token opaco de capacidade, restrito a acao e nunca registrado em telemetria.
  */
 export type ActionToken = string;
+
+/**
+ * Assinatura HMAC enviada pelo Mercado Pago; nunca deve ser registrada.
+ */
+export type MercadoPagoSignature = string;
+
+/**
+ * Identificador da entrega usado na validação da assinatura.
+ */
+export type MercadoPagoRequestId = string;
+
+/**
+ * Identificador externo do pagamento notificado.
+ */
+export type MercadoPagoDataId = string;
+
+export type MercadoPagoType = 'payment';
 
 export type ConsultarDashboardFaturamentoData = {
     body?: never;
@@ -895,3 +935,117 @@ export type CancelarPagamentoResponses = {
 };
 
 export type CancelarPagamentoResponse = CancelarPagamentoResponses[keyof CancelarPagamentoResponses];
+
+export type ReconciliarPagamentoData = {
+    body?: never;
+    headers: {
+        /**
+         * Identificador de correlacao aceito do cliente e propagado em chamadas HTTP, eventos, logs e traces, conforme contracts/error-model.md.
+         */
+        'X-Correlation-Id'?: string;
+        /**
+         * Chave obrigatoria neste servico para retries seguros em operacoes POST ou PATCH com efeito colateral, conforme contracts/idempotency.md.
+         */
+        'X-Idempotency-Key': string;
+    };
+    path: {
+        pagamentoId: string;
+    };
+    query?: never;
+    url: '/pagamentos/{pagamentoId}/reconciliacao';
+};
+
+export type ReconciliarPagamentoErrors = {
+    /**
+     * Requisicao invalida.
+     */
+    400: ErrorResponse;
+    /**
+     * Token JWT ausente, invalido ou expirado.
+     */
+    401: ErrorResponse;
+    /**
+     * Token JWT válido sem um dos papéis exigidos.
+     */
+    403: ErrorResponse;
+    /**
+     * Recurso nao encontrado.
+     */
+    404: ErrorResponse;
+    /**
+     * Conflito de estado, duplicidade ou idempotencia.
+     */
+    409: ErrorResponse;
+    /**
+     * Falha ao integrar com provedor financeiro externo.
+     */
+    502: ErrorResponse;
+    /**
+     * Provedor financeiro externo indisponivel ou configuracao obrigatoria ausente.
+     */
+    503: ErrorResponse;
+};
+
+export type ReconciliarPagamentoError = ReconciliarPagamentoErrors[keyof ReconciliarPagamentoErrors];
+
+export type ReconciliarPagamentoResponses = {
+    /**
+     * Situação reconciliada ou preservada quando ainda pendente.
+     */
+    200: Pagamento;
+};
+
+export type ReconciliarPagamentoResponse = ReconciliarPagamentoResponses[keyof ReconciliarPagamentoResponses];
+
+export type ReceberWebhookMercadoPagoData = {
+    body: MercadoPagoWebhookRequest;
+    headers: {
+        /**
+         * Assinatura HMAC enviada pelo Mercado Pago; nunca deve ser registrada.
+         */
+        'x-signature': string;
+        /**
+         * Identificador da entrega usado na validação da assinatura.
+         */
+        'x-request-id': string;
+    };
+    path?: never;
+    query: {
+        /**
+         * Identificador externo do pagamento notificado.
+         */
+        'data.id': string;
+        type: 'payment';
+    };
+    url: '/integracoes/mercado-pago/webhooks';
+};
+
+export type ReceberWebhookMercadoPagoErrors = {
+    /**
+     * Requisicao invalida.
+     */
+    400: ErrorResponse;
+    /**
+     * Token JWT ausente, invalido ou expirado.
+     */
+    401: ErrorResponse;
+    /**
+     * Falha ao integrar com provedor financeiro externo.
+     */
+    502: ErrorResponse;
+    /**
+     * Provedor financeiro externo indisponivel ou configuracao obrigatoria ausente.
+     */
+    503: ErrorResponse;
+};
+
+export type ReceberWebhookMercadoPagoError = ReceberWebhookMercadoPagoErrors[keyof ReceberWebhookMercadoPagoErrors];
+
+export type ReceberWebhookMercadoPagoResponses = {
+    /**
+     * Notificação validada e processada ou reconhecida idempotentemente.
+     */
+    204: void;
+};
+
+export type ReceberWebhookMercadoPagoResponse = ReceberWebhookMercadoPagoResponses[keyof ReceberWebhookMercadoPagoResponses];
