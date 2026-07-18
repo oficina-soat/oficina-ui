@@ -3,7 +3,12 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Alert, EmptyState, Loading } from '../../../shared/ui';
 import type { Budget, Payment } from '../application';
-import { APPROVE_BUDGET, GET_WORK_ORDER_BILLING, REJECT_BUDGET } from '../billing.providers';
+import {
+  APPROVE_BUDGET,
+  GET_WORK_ORDER_BILLING,
+  RECONCILE_PAYMENT,
+  REJECT_BUDGET,
+} from '../billing.providers';
 
 @Component({
   selector: 'app-billing',
@@ -131,13 +136,82 @@ import { APPROVE_BUDGET, GET_WORK_ORDER_BILLING, REJECT_BUDGET } from '../billin
                   <td>{{ payment.status }}</td>
                   <td>{{ payment.updatedAt | date: 'short' : '' : 'pt-BR' }}</td>
                 </tr>
+                @if (payment.pixInstructions) {
+                  <tr>
+                    <td colspan="5">
+                      <section class="pix" [attr.aria-labelledby]="'pix-' + payment.id">
+                        <h3 [id]="'pix-' + payment.id">Pagamento PIX</h3>
+                        @if (payment.pixInstructions.qrCodeBase64) {
+                          <img
+                            [src]="'data:image/png;base64,' + payment.pixInstructions.qrCodeBase64"
+                            alt="QR Code para pagamento PIX"
+                          />
+                        }
+                        <label>
+                          Código PIX copia e cola
+                          <textarea
+                            readonly
+                            [value]="payment.pixInstructions.copyAndPaste"
+                          ></textarea>
+                        </label>
+                        <button
+                          class="ui-button ui-button--secondary"
+                          type="button"
+                          (click)="copyPix(payment)"
+                        >
+                          Copiar código PIX
+                        </button>
+                        @if (payment.pixInstructions.expiresAt) {
+                          <p>
+                            <strong>Vencimento:</strong>
+                            {{ payment.pixInstructions.expiresAt | date: 'short' : '' : 'pt-BR' }}
+                          </p>
+                        }
+                        @if (payment.pixInstructions.ticketUrl) {
+                          <a
+                            class="ui-button ui-button--secondary"
+                            [href]="payment.pixInstructions.ticketUrl"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            >Abrir instruções do Mercado Pago</a
+                          >
+                        }
+                      </section>
+                    </td>
+                  </tr>
+                }
+                @if (payment.allowedActions.includes('ATUALIZAR_STATUS')) {
+                  <tr>
+                    <td colspan="5">
+                      <button
+                        class="ui-button"
+                        type="button"
+                        [disabled]="saving()"
+                        (click)="refreshPayment(payment)"
+                      >
+                        Atualizar situação
+                      </button>
+                    </td>
+                  </tr>
+                }
+                @if (payment.status === 'CONFIRMADO') {
+                  <tr>
+                    <td colspan="5">
+                      <a
+                        class="ui-button"
+                        [href]="'/ordens-servico/' + searchForm.controls.workOrderId.value.trim()"
+                        >Continuar para registrar entrega</a
+                      >
+                    </td>
+                  </tr>
+                }
               }
             </tbody>
           </table>
         </section>
       }
       @if (success()) {
-        <app-alert title="Orçamento atualizado" tone="success">{{ success() }}</app-alert>
+        <app-alert title="Operação concluída" tone="success">{{ success() }}</app-alert>
       }
     </section>
   `,
@@ -214,6 +288,20 @@ import { APPROVE_BUDGET, GET_WORK_ORDER_BILLING, REJECT_BUDGET } from '../billin
         font-size: 1.25rem;
         font-weight: 700;
       }
+      .pix {
+        display: grid;
+        gap: 0.75rem;
+        max-width: 38rem;
+      }
+      .pix img {
+        width: min(16rem, 100%);
+        height: auto;
+      }
+      .pix textarea {
+        min-height: 6rem;
+        padding: 0.5rem;
+        overflow-wrap: anywhere;
+      }
     `,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -222,6 +310,7 @@ export class Billing {
   private readonly getBilling = inject(GET_WORK_ORDER_BILLING);
   private readonly approve = inject(APPROVE_BUDGET);
   private readonly reject = inject(REJECT_BUDGET);
+  private readonly reconcilePayment = inject(RECONCILE_PAYMENT);
   protected readonly searchForm = new FormGroup({
     workOrderId: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
   });
@@ -277,6 +366,35 @@ export class Billing {
       this.error.set(true);
     } finally {
       this.saving.set(false);
+    }
+  }
+  protected async refreshPayment(payment: Payment): Promise<void> {
+    if (!payment.allowedActions.includes('ATUALIZAR_STATUS')) return;
+    this.saving.set(true);
+    this.error.set(false);
+    try {
+      const updated = await this.reconcilePayment.execute(payment.id, crypto.randomUUID());
+      this.payments.update((values) =>
+        values.map((value) => (value.id === updated.id ? updated : value)),
+      );
+      this.success.set(
+        updated.status === 'CONFIRMADO'
+          ? 'Pagamento confirmado. A entrega já pode ser registrada.'
+          : 'Situação do pagamento atualizada.',
+      );
+    } catch {
+      this.error.set(true);
+    } finally {
+      this.saving.set(false);
+    }
+  }
+  protected async copyPix(payment: Payment): Promise<void> {
+    if (!payment.pixInstructions) return;
+    try {
+      await navigator.clipboard.writeText(payment.pixInstructions.copyAndPaste);
+      this.success.set('Código PIX copiado.');
+    } catch {
+      this.error.set(true);
     }
   }
 }

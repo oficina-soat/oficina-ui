@@ -53,14 +53,44 @@ describe('BillingApiAdapter', () => {
         status: 'CRIADO',
         provedor: 'mercado-pago',
         transacaoExternaId: 'external-1',
+        instrucoesPix: {
+          copiaECola: 'pix-code',
+          ticketUrl: 'https://sandbox.mercadopago.com/payment/1',
+          expiraEm: '2026-01-01T00:30:00Z',
+        },
         criadoEm: '2026-01-01T00:00:00Z',
         atualizadoEm: '2026-01-01T00:00:00Z',
-        acoesPermitidas: ['CONFIRMAR'],
+        acoesPermitidas: ['ATUALIZAR_STATUS'],
       },
     ]);
     await expect(payments).resolves.toMatchObject([
-      { id: 'p1', provider: 'mercado-pago', externalTransactionId: 'external-1' },
+      {
+        id: 'p1',
+        provider: 'mercado-pago',
+        externalTransactionId: 'external-1',
+        allowedActions: ['ATUALIZAR_STATUS'],
+        pixInstructions: { copyAndPaste: 'pix-code' },
+      },
     ]);
+    const reconciliation = adapter.reconcilePayment('p/1', 'key-payment');
+    const reconciliationRequest = http.expectOne(
+      'https://api.example/api/v1/pagamentos/p%2F1/reconciliacao',
+    );
+    expect(reconciliationRequest.request.headers.get('X-Idempotency-Key')).toBe('key-payment');
+    reconciliationRequest.flush({
+      pagamentoId: 'p/1',
+      ordemServicoId: 'os/1',
+      orcamentoId: 'b1',
+      valor: 10,
+      metodo: 'PIX',
+      status: 'CONFIRMADO',
+      provedor: 'mercado-pago',
+      transacaoExternaId: 'external-1',
+      criadoEm: '2026-01-01T00:00:00Z',
+      atualizadoEm: '2026-01-01T00:01:00Z',
+      acoesPermitidas: [],
+    });
+    await expect(reconciliation).resolves.toMatchObject({ status: 'CONFIRMADO' });
     const decision = adapter.approveBudget({ budgetId: 'b1', idempotencyKey: 'key-1' });
     const request = http.expectOne('https://api.example/api/v1/orcamentos/b1/aprovacao');
     expect(request.request.headers.get('X-Idempotency-Key')).toBe('key-1');

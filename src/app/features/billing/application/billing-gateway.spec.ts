@@ -3,6 +3,7 @@ import {
   ApproveBudget,
   GetWorkOrderBilling,
   RejectBudget,
+  ReconcilePayment,
   type BillingGateway,
 } from './billing-gateway';
 const gateway = (): BillingGateway => ({
@@ -11,6 +12,7 @@ const gateway = (): BillingGateway => ({
   listPayments: vi.fn().mockResolvedValue([]),
   approveBudget: vi.fn().mockResolvedValue({ id: 'b1' }),
   rejectBudget: vi.fn().mockResolvedValue({ id: 'b1' }),
+  reconcilePayment: vi.fn().mockResolvedValue({ id: 'p1' }),
 });
 describe('casos de uso de faturamento', () => {
   it('delega consultas e decisões sem interpretar estados', async () => {
@@ -19,10 +21,12 @@ describe('casos de uso de faturamento', () => {
     const command = { budgetId: 'b1', idempotencyKey: 'key' };
     await new ApproveBudget(billing).execute(command);
     await new RejectBudget(billing).execute(command);
+    await new ReconcilePayment(billing).execute('p1', 'key-2');
     expect(billing.listBudgets).toHaveBeenCalledWith('os-1');
     expect(billing.getWorkOrderState).toHaveBeenCalledWith('os-1');
     expect(billing.listPayments).toHaveBeenCalledWith('os-1');
     expect(billing.approveBudget).toHaveBeenCalledWith(command);
     expect(billing.rejectBudget).toHaveBeenCalledWith(command);
+    expect(billing.reconcilePayment).toHaveBeenCalledWith('p1', 'key-2');
   });
 });

@@ -30,7 +30,20 @@ const mapPayment = (value: Pagamento): Payment => ({
   status: value.status,
   ...(value.provedor ? { provider: value.provedor } : {}),
   ...(value.transacaoExternaId ? { externalTransactionId: value.transacaoExternaId } : {}),
+  ...(value.instrucoesPix
+    ? {
+        pixInstructions: {
+          copyAndPaste: value.instrucoesPix.copiaECola,
+          ...(value.instrucoesPix.qrCodeBase64
+            ? { qrCodeBase64: value.instrucoesPix.qrCodeBase64 }
+            : {}),
+          ...(value.instrucoesPix.ticketUrl ? { ticketUrl: value.instrucoesPix.ticketUrl } : {}),
+          ...(value.instrucoesPix.expiraEm ? { expiresAt: value.instrucoesPix.expiraEm } : {}),
+        },
+      }
+    : {}),
   updatedAt: value.atualizadoEm,
+  allowedActions: value.acoesPermitidas,
 });
 
 @Injectable({ providedIn: 'root' })
@@ -60,6 +73,16 @@ export class BillingApiAdapter implements BillingGateway {
       ),
     );
     return values.map(mapPayment);
+  }
+  async reconcilePayment(paymentId: string, idempotencyKey: string): Promise<Payment> {
+    const value = await firstValueFrom(
+      this.http.post<Pagamento>(
+        `${this.config.apiBaseUrl}/pagamentos/${encodeURIComponent(paymentId)}/reconciliacao`,
+        {},
+        { context: idempotentCommandContext(idempotencyKey) },
+      ),
+    );
+    return mapPayment(value);
   }
   approveBudget(command: BudgetDecision): Promise<Budget> {
     return this.decide(command, 'aprovacao');

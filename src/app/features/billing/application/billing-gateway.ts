@@ -18,6 +18,13 @@ export interface Budget {
   readonly allowedActions: readonly BudgetAction[];
 }
 export type PaymentStatus = 'CRIADO' | 'CONFIRMADO' | 'RECUSADO' | 'CANCELADO';
+export type PaymentAction = 'ATUALIZAR_STATUS' | 'CONFIRMAR' | 'RECUSAR' | 'CANCELAR';
+export interface PixInstructions {
+  readonly copyAndPaste: string;
+  readonly qrCodeBase64?: string;
+  readonly ticketUrl?: string;
+  readonly expiresAt?: string;
+}
 export interface Payment {
   readonly id: string;
   readonly budgetId: string;
@@ -26,7 +33,9 @@ export interface Payment {
   readonly status: PaymentStatus;
   readonly provider?: string;
   readonly externalTransactionId?: string;
+  readonly pixInstructions?: PixInstructions;
   readonly updatedAt: string;
+  readonly allowedActions: readonly PaymentAction[];
 }
 export interface BudgetDecision {
   readonly budgetId: string;
@@ -39,6 +48,7 @@ export interface BillingGateway {
   approveBudget(command: BudgetDecision): Promise<Budget>;
   rejectBudget(command: BudgetDecision): Promise<Budget>;
   listPayments(workOrderId: string): Promise<readonly Payment[]>;
+  reconcilePayment(paymentId: string, idempotencyKey: string): Promise<Payment>;
 }
 export class GetWorkOrderBilling {
   constructor(private readonly gateway: BillingGateway) {}
@@ -63,5 +73,11 @@ export class RejectBudget {
   constructor(private readonly gateway: BillingGateway) {}
   execute(command: BudgetDecision): Promise<Budget> {
     return this.gateway.rejectBudget(command);
+  }
+}
+export class ReconcilePayment {
+  constructor(private readonly gateway: BillingGateway) {}
+  execute(paymentId: string, idempotencyKey: string): Promise<Payment> {
+    return this.gateway.reconcilePayment(paymentId, idempotencyKey);
   }
 }
