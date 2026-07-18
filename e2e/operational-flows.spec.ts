@@ -22,6 +22,7 @@ interface ApiOptions {
 
 const mockApi = async (page: Page, options: ApiOptions = {}): Promise<void> => {
   let credentialCalls = 0;
+  let diagnosisStarted = false;
   await page.route('**/*', async (route) => {
     const request = route.request();
     const url = new URL(request.url());
@@ -159,17 +160,18 @@ const mockApi = async (page: Page, options: ApiOptions = {}): Promise<void> => {
         json: {
           execucaoId: 'execucao-1',
           ordemServicoId: 'ordem-1',
-          status: 'CRIADA',
+          status: diagnosisStarted ? 'EM_DIAGNOSTICO' : 'CRIADA',
           prioridade: 10,
           criadoEm: '2026-07-15T12:00:00Z',
-          atualizadoEm: '2026-07-15T12:00:00Z',
-          acoesPermitidas: ['INICIAR_DIAGNOSTICO'],
+          atualizadoEm: diagnosisStarted ? '2026-07-15T13:00:00Z' : '2026-07-15T12:00:00Z',
+          acoesPermitidas: diagnosisStarted ? ['CONCLUIR_DIAGNOSTICO'] : ['INICIAR_DIAGNOSTICO'],
         },
       });
       return;
     }
     if (url.pathname === '/api/v1/execucoes/execucao-1/diagnostico/inicio') {
       options.onExecutionCommand?.(route);
+      diagnosisStarted = true;
       await route.fulfill({
         json: {
           execucaoId: 'execucao-1',
@@ -286,7 +288,10 @@ const mockApi = async (page: Page, options: ApiOptions = {}): Promise<void> => {
     if (url.pathname === '/api/v1/ordens-servico/ordem-1') {
       await route.fulfill({
         json: options.composableOrder
-          ? workOrder(false)
+          ? {
+              ...workOrder(false),
+              atualizadoEm: diagnosisStarted ? '2026-07-15T14:00:00Z' : '2026-07-15T13:00:00Z',
+            }
           : { ordemServicoId: 'ordem-1', estado: 'AGUARDANDO_APROVACAO' },
       });
       return;
