@@ -449,18 +449,40 @@ export class ExecutionDetail implements OnInit {
     this.success.set(null);
     const trimmed = notes?.trim();
     try {
-      this.execution.set(
-        await action.execute({
-          id,
-          idempotencyKey: crypto.randomUUID(),
-          ...(trimmed ? { notes: trimmed } : {}),
-        }),
-      );
+      const updated = await action.execute({
+        id,
+        idempotencyKey: crypto.randomUUID(),
+        ...(trimmed ? { notes: trimmed } : {}),
+      });
+      this.execution.set(updated);
+      await this.synchronizeAfterCommand(updated);
       this.success.set(message);
     } catch (error: unknown) {
       this.report(error);
     } finally {
       this.saving.set(false);
+    }
+  }
+
+  private async synchronizeAfterCommand(updated: ExecutionDetails): Promise<void> {
+    try {
+      const previousOrder = this.order();
+      const execution = await this.get.execute(updated.id);
+      this.execution.set(execution);
+      for (let attempt = 0; attempt < 10; attempt += 1) {
+        if (attempt > 0) await new Promise((resolve) => setTimeout(resolve, 500));
+        const order = await this.getOrder.execute(updated.ordemServicoId);
+        this.order.set(order);
+        if (
+          !previousOrder ||
+          order.updatedAt !== previousOrder.updatedAt ||
+          order.allowedActions.join() !== previousOrder.allowedActions.join()
+        ) {
+          break;
+        }
+      }
+    } catch {
+      // A resposta canônica do comando continua válida mesmo se a leitura complementar falhar.
     }
   }
 
