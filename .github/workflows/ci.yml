@@ -48,6 +48,7 @@ jobs:
           grep -q 'nodePort: 30084' /tmp/oficina-ui-k8s.yaml
           docker build --tag "oficina-ui:quality-${GITHUB_SHA}" .
           docker run --rm --read-only \
+            --add-host mailhog:127.0.0.1 \
             --tmpfs /tmp:uid=101,gid=101 \
             --tmpfs /var/cache/nginx:uid=101,gid=101 \
             --tmpfs /var/run:uid=101,gid=101 \
