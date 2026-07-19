@@ -30,6 +30,11 @@ describe('OperationalShell', () => {
     );
     expect(fixture.nativeElement.textContent).toContain('Ativação de credencial');
     expect(fixture.nativeElement.textContent).toContain('Usuários');
+    const mailhogLink = [...fixture.nativeElement.querySelectorAll('a')].find(
+      (link: HTMLAnchorElement) => link.textContent?.includes('E-mails do lab'),
+    ) as HTMLAnchorElement;
+    expect(mailhogLink.getAttribute('href')).toBe('/mailhog/');
+    expect(mailhogLink.getAttribute('target')).toBe('_blank');
   });
 
   it('apresenta indisponibilidade técnica global sem substituir o conteúdo', async () => {

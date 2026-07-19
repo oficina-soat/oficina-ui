@@ -7,6 +7,7 @@ import {
   GET_WORK_ORDER_BILLING,
   RECONCILE_PAYMENT,
   REJECT_BUDGET,
+  RESEND_BUDGET_EMAIL,
 } from '../billing.providers';
 import { Billing } from './billing';
 registerLocaleData(localePt);
@@ -46,6 +47,7 @@ describe('Billing', () => {
         },
         { provide: APPROVE_BUDGET, useValue: { execute: approve } },
         { provide: REJECT_BUDGET, useValue: { execute: vi.fn() } },
+        { provide: RESEND_BUDGET_EMAIL, useValue: { execute: vi.fn() } },
         { provide: RECONCILE_PAYMENT, useValue: { execute: vi.fn() } },
       ],
     }).compileComponents();
@@ -76,6 +78,7 @@ describe('Billing', () => {
         },
         { provide: APPROVE_BUDGET, useValue: { execute: vi.fn() } },
         { provide: REJECT_BUDGET, useValue: { execute: vi.fn() } },
+        { provide: RESEND_BUDGET_EMAIL, useValue: { execute: vi.fn() } },
         { provide: RECONCILE_PAYMENT, useValue: { execute: vi.fn() } },
       ],
     }).compileComponents();
@@ -88,6 +91,57 @@ describe('Billing', () => {
     await fixture.whenStable();
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('Não foi possível consultar o faturamento');
+  });
+
+  it('reenvia o e-mail somente quando a ação é oferecida pelo backend', async () => {
+    const resend = vi.fn().mockResolvedValue(undefined);
+    await TestBed.configureTestingModule({
+      imports: [Billing],
+      providers: [
+        {
+          provide: GET_WORK_ORDER_BILLING,
+          useValue: {
+            execute: vi.fn().mockResolvedValue({
+              workOrderState: 'AGUARDANDO_APROVACAO',
+              budgets: [
+                {
+                  id: 'b-email',
+                  workOrderId: 'os-email',
+                  items: [],
+                  totalValue: 100,
+                  status: 'GERADO',
+                  updatedAt: '2026-01-01T00:00:00Z',
+                  allowedActions: ['REENVIAR_EMAIL'],
+                },
+              ],
+              payments: [],
+            }),
+          },
+        },
+        { provide: APPROVE_BUDGET, useValue: { execute: vi.fn() } },
+        { provide: REJECT_BUDGET, useValue: { execute: vi.fn() } },
+        { provide: RESEND_BUDGET_EMAIL, useValue: { execute: resend } },
+        { provide: RECONCILE_PAYMENT, useValue: { execute: vi.fn() } },
+      ],
+    }).compileComponents();
+    const fixture = TestBed.createComponent(Billing);
+    fixture.detectChanges();
+    const input = fixture.nativeElement.querySelector('input');
+    input.value = 'os-email';
+    input.dispatchEvent(new Event('input'));
+    fixture.nativeElement.querySelector('form').dispatchEvent(new Event('submit'));
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const button = [...fixture.nativeElement.querySelectorAll('button')].find(
+      (candidate: HTMLButtonElement) => candidate.textContent?.includes('Reenviar e-mail'),
+    ) as HTMLButtonElement;
+    button.click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(resend).toHaveBeenCalledWith('b-email', expect.any(String));
+    expect(fixture.nativeElement.textContent).toContain('O link anterior foi invalidado.');
   });
 
   it('apresenta pagamento e executa recusa somente quando oferecida', async () => {
@@ -135,6 +189,7 @@ describe('Billing', () => {
         },
         { provide: APPROVE_BUDGET, useValue: { execute: vi.fn() } },
         { provide: REJECT_BUDGET, useValue: { execute: reject } },
+        { provide: RESEND_BUDGET_EMAIL, useValue: { execute: vi.fn() } },
         { provide: RECONCILE_PAYMENT, useValue: { execute: vi.fn() } },
       ],
     }).compileComponents();
@@ -194,6 +249,7 @@ describe('Billing', () => {
         },
         { provide: APPROVE_BUDGET, useValue: { execute: vi.fn() } },
         { provide: REJECT_BUDGET, useValue: { execute: vi.fn() } },
+        { provide: RESEND_BUDGET_EMAIL, useValue: { execute: vi.fn() } },
         { provide: RECONCILE_PAYMENT, useValue: { execute: reconcile } },
       ],
     }).compileComponents();

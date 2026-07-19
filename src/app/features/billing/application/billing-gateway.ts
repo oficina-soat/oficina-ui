@@ -1,5 +1,5 @@
 export type BudgetStatus = 'GERADO' | 'APROVADO' | 'RECUSADO';
-export type BudgetAction = 'APROVAR' | 'RECUSAR';
+export type BudgetAction = 'APROVAR' | 'RECUSAR' | 'REENVIAR_EMAIL';
 export interface BudgetItem {
   readonly id: string;
   readonly name: string;
@@ -47,6 +47,7 @@ export interface BillingGateway {
   listBudgets(workOrderId: string): Promise<readonly Budget[]>;
   approveBudget(command: BudgetDecision): Promise<Budget>;
   rejectBudget(command: BudgetDecision): Promise<Budget>;
+  resendBudgetEmail(budgetId: string, idempotencyKey: string): Promise<void>;
   listPayments(workOrderId: string): Promise<readonly Payment[]>;
   reconcilePayment(paymentId: string, idempotencyKey: string): Promise<Payment>;
 }
@@ -73,6 +74,12 @@ export class RejectBudget {
   constructor(private readonly gateway: BillingGateway) {}
   execute(command: BudgetDecision): Promise<Budget> {
     return this.gateway.rejectBudget(command);
+  }
+}
+export class ResendBudgetEmail {
+  constructor(private readonly gateway: BillingGateway) {}
+  execute(budgetId: string, idempotencyKey: string): Promise<void> {
+    return this.gateway.resendBudgetEmail(budgetId, idempotencyKey);
   }
 }
 export class ReconcilePayment {

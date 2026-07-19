@@ -105,5 +105,12 @@ describe('BillingApiAdapter', () => {
       acoesPermitidas: [],
     });
     await expect(decision).resolves.toMatchObject({ status: 'APROVADO', allowedActions: [] });
+    const resend = adapter.resendBudgetEmail('b/1', 'key-email');
+    const resendRequest = http.expectOne(
+      'https://api.example/api/v1/orcamentos/b%2F1/notificacao/reenvio',
+    );
+    expect(resendRequest.request.headers.get('X-Idempotency-Key')).toBe('key-email');
+    resendRequest.flush(null);
+    await expect(resend).resolves.toBeUndefined();
   });
 });

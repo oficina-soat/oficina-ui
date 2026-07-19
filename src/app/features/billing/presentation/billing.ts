@@ -8,6 +8,7 @@ import {
   GET_WORK_ORDER_BILLING,
   RECONCILE_PAYMENT,
   REJECT_BUDGET,
+  RESEND_BUDGET_EMAIL,
 } from '../billing.providers';
 
 @Component({
@@ -82,6 +83,22 @@ import {
           <p class="total">
             Total: {{ budget.totalValue | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}
           </p>
+          @if (budget.allowedActions.includes('REENVIAR_EMAIL')) {
+            <div class="notification-action">
+              <p>
+                Se o cliente não recebeu a solicitação, envie um novo link. O link anterior será
+                invalidado.
+              </p>
+              <button
+                class="ui-button ui-button--secondary"
+                type="button"
+                [disabled]="saving()"
+                (click)="resendEmail(budget)"
+              >
+                Reenviar e-mail do orçamento
+              </button>
+            </div>
+          }
           @if (
             budget.allowedActions.includes('APROVAR') || budget.allowedActions.includes('RECUSAR')
           ) {
@@ -293,6 +310,12 @@ import {
         gap: 0.75rem;
         max-width: 38rem;
       }
+      .notification-action {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        flex-wrap: wrap;
+      }
       .pix img {
         width: min(16rem, 100%);
         height: auto;
@@ -310,6 +333,7 @@ export class Billing {
   private readonly getBilling = inject(GET_WORK_ORDER_BILLING);
   private readonly approve = inject(APPROVE_BUDGET);
   private readonly reject = inject(REJECT_BUDGET);
+  private readonly resendBudgetEmail = inject(RESEND_BUDGET_EMAIL);
   private readonly reconcilePayment = inject(RECONCILE_PAYMENT);
   protected readonly searchForm = new FormGroup({
     workOrderId: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
@@ -382,6 +406,20 @@ export class Billing {
           ? 'Pagamento confirmado. A entrega já pode ser registrada.'
           : 'Situação do pagamento atualizada.',
       );
+    } catch {
+      this.error.set(true);
+    } finally {
+      this.saving.set(false);
+    }
+  }
+  protected async resendEmail(budget: Budget): Promise<void> {
+    if (!budget.allowedActions.includes('REENVIAR_EMAIL')) return;
+    this.saving.set(true);
+    this.error.set(false);
+    this.success.set('');
+    try {
+      await this.resendBudgetEmail.execute(budget.id, crypto.randomUUID());
+      this.success.set('E-mail do orçamento reenviado. O link anterior foi invalidado.');
     } catch {
       this.error.set(true);
     } finally {
