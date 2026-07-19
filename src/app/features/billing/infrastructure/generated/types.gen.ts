@@ -61,6 +61,15 @@ export type DecisaoPublicaRequest = {
     motivo?: string;
 };
 
+export type DecisaoPublicaUnificadaRequest = {
+    /**
+     * Capability opaca DECIDIR; nunca deve ser logada.
+     */
+    actionToken: string;
+    decisao: 'APROVAR' | 'RECUSAR';
+    motivo?: string;
+};
+
 export type Orcamento = {
     orcamentoId: string;
     ordemServicoId: string;
@@ -72,7 +81,7 @@ export type Orcamento = {
     acoesPermitidas: Array<AcaoPermitidaOrcamento>;
 };
 
-export type AcaoPermitidaOrcamento = 'APROVAR' | 'RECUSAR';
+export type AcaoPermitidaOrcamento = 'APROVAR' | 'RECUSAR' | 'REENVIAR_EMAIL';
 
 export type StatusOrcamento = 'GERADO' | 'APROVADO' | 'RECUSADO';
 
@@ -116,7 +125,7 @@ export type CancelamentoRequest = {
 };
 
 export type MercadoPagoWebhookRequest = {
-    action: 'payment.created' | 'payment.updated';
+    action: string;
     api_version?: string;
     data: {
         id: string;
@@ -124,7 +133,7 @@ export type MercadoPagoWebhookRequest = {
     date_created?: string;
     id?: string | number;
     live_mode?: boolean;
-    type: 'payment';
+    type: 'order' | 'payment';
 };
 
 export type Pagamento = PagamentoCreateRequest & {
@@ -208,11 +217,11 @@ export type MercadoPagoSignature = string;
 export type MercadoPagoRequestId = string;
 
 /**
- * Identificador externo do pagamento notificado.
+ * Identificador externo da order ou do payment legado notificado.
  */
 export type MercadoPagoDataId = string;
 
-export type MercadoPagoType = 'payment';
+export type MercadoPagoType = 'order' | 'payment';
 
 export type ConsultarDashboardFaturamentoData = {
     body?: never;
@@ -471,6 +480,146 @@ export type RecusarOrcamentoResponses = {
 };
 
 export type RecusarOrcamentoResponse = RecusarOrcamentoResponses[keyof RecusarOrcamentoResponses];
+
+export type ReenviarNotificacaoOrcamentoData = {
+    body?: never;
+    headers: {
+        /**
+         * Identificador de correlacao aceito do cliente e propagado em chamadas HTTP, eventos, logs e traces, conforme contracts/error-model.md.
+         */
+        'X-Correlation-Id'?: string;
+        /**
+         * Chave obrigatoria neste servico para retries seguros em operacoes POST ou PATCH com efeito colateral, conforme contracts/idempotency.md.
+         */
+        'X-Idempotency-Key': string;
+    };
+    path: {
+        orcamentoId: string;
+    };
+    query?: never;
+    url: '/orcamentos/{orcamentoId}/notificacao/reenvio';
+};
+
+export type ReenviarNotificacaoOrcamentoErrors = {
+    /**
+     * Requisicao invalida.
+     */
+    400: ErrorResponse;
+    /**
+     * Token JWT ausente, invalido ou expirado.
+     */
+    401: ErrorResponse;
+    /**
+     * Token JWT válido sem um dos papéis exigidos.
+     */
+    403: ErrorResponse;
+    /**
+     * Recurso nao encontrado.
+     */
+    404: ErrorResponse;
+    /**
+     * Conflito de estado, duplicidade ou idempotencia.
+     */
+    409: ErrorResponse;
+    /**
+     * Falha ao integrar com provedor financeiro externo.
+     */
+    502: ErrorResponse;
+    /**
+     * Provedor financeiro externo indisponivel ou configuracao obrigatoria ausente.
+     */
+    503: ErrorResponse;
+};
+
+export type ReenviarNotificacaoOrcamentoError = ReenviarNotificacaoOrcamentoErrors[keyof ReenviarNotificacaoOrcamentoErrors];
+
+export type ReenviarNotificacaoOrcamentoResponses = {
+    /**
+     * Nova capability emitida e solicitação de entrega aceita pela notificação.
+     */
+    204: void;
+};
+
+export type ReenviarNotificacaoOrcamentoResponse = ReenviarNotificacaoOrcamentoResponses[keyof ReenviarNotificacaoOrcamentoResponses];
+
+export type AbrirDecisaoOrcamentoPorLinkData = {
+    body?: never;
+    headers?: {
+        /**
+         * Identificador de correlacao aceito do cliente e propagado em chamadas HTTP, eventos, logs e traces, conforme contracts/error-model.md.
+         */
+        'X-Correlation-Id'?: string;
+    };
+    path: {
+        ordemServicoId: string;
+    };
+    query: {
+        /**
+         * Token opaco de capacidade, restrito a acao e nunca registrado em telemetria.
+         */
+        actionToken: string;
+    };
+    url: '/ordens-servico/{ordemServicoId}/orcamento-link';
+};
+
+export type AbrirDecisaoOrcamentoPorLinkErrors = {
+    /**
+     * Link invalido, expirado, incompatível ou ja utilizado; a pagina nao distingue a causa.
+     */
+    401: string;
+};
+
+export type AbrirDecisaoOrcamentoPorLinkError = AbrirDecisaoOrcamentoPorLinkErrors[keyof AbrirDecisaoOrcamentoPorLinkErrors];
+
+export type AbrirDecisaoOrcamentoPorLinkResponses = {
+    /**
+     * Pagina HTML segura de acompanhamento, confirmacao ou resultado.
+     */
+    200: string;
+};
+
+export type AbrirDecisaoOrcamentoPorLinkResponse = AbrirDecisaoOrcamentoPorLinkResponses[keyof AbrirDecisaoOrcamentoPorLinkResponses];
+
+export type ConfirmarDecisaoOrcamentoPorLinkData = {
+    body: DecisaoPublicaUnificadaRequest;
+    headers?: {
+        /**
+         * Identificador de correlacao aceito do cliente e propagado em chamadas HTTP, eventos, logs e traces, conforme contracts/error-model.md.
+         */
+        'X-Correlation-Id'?: string;
+    };
+    path: {
+        ordemServicoId: string;
+    };
+    query?: never;
+    url: '/ordens-servico/{ordemServicoId}/orcamento-link';
+};
+
+export type ConfirmarDecisaoOrcamentoPorLinkErrors = {
+    /**
+     * A decisão informada não pertence ao conjunto APROVAR ou RECUSAR.
+     */
+    400: string;
+    /**
+     * Link invalido, expirado, incompatível ou ja utilizado; a pagina nao distingue a causa.
+     */
+    401: string;
+    /**
+     * O orcamento nao aceita mais a decisao solicitada.
+     */
+    409: string;
+};
+
+export type ConfirmarDecisaoOrcamentoPorLinkError = ConfirmarDecisaoOrcamentoPorLinkErrors[keyof ConfirmarDecisaoOrcamentoPorLinkErrors];
+
+export type ConfirmarDecisaoOrcamentoPorLinkResponses = {
+    /**
+     * Pagina HTML segura de acompanhamento, confirmacao ou resultado.
+     */
+    200: string;
+};
+
+export type ConfirmarDecisaoOrcamentoPorLinkResponse = ConfirmarDecisaoOrcamentoPorLinkResponses[keyof ConfirmarDecisaoOrcamentoPorLinkResponses];
 
 export type AcompanharOrdemServicoPorLinkData = {
     body?: never;
@@ -1012,10 +1161,10 @@ export type ReceberWebhookMercadoPagoData = {
     path?: never;
     query: {
         /**
-         * Identificador externo do pagamento notificado.
+         * Identificador externo da order ou do payment legado notificado.
          */
         'data.id': string;
-        type: 'payment';
+        type: 'order' | 'payment';
     };
     url: '/integracoes/mercado-pago/webhooks';
 };
@@ -1045,7 +1194,5 @@ export type ReceberWebhookMercadoPagoResponses = {
     /**
      * Notificação validada e processada ou reconhecida idempotentemente.
      */
-    204: void;
+    200: unknown;
 };
-
-export type ReceberWebhookMercadoPagoResponse = ReceberWebhookMercadoPagoResponses[keyof ReceberWebhookMercadoPagoResponses];

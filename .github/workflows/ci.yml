@@ -46,6 +46,8 @@ jobs:
           kubectl kustomize k8s/overlays/lab > /tmp/oficina-ui-k8s.yaml
           grep -q 'image: IMAGE_PLACEHOLDER' /tmp/oficina-ui-k8s.yaml
           grep -q 'nodePort: 30084' /tmp/oficina-ui-k8s.yaml
+          grep -Fq 'location /mailhog/' deploy/nginx.conf
+          grep -Fq 'proxy_pass http://mailhog:8025;' deploy/nginx.conf
           docker build --tag "oficina-ui:quality-${GITHUB_SHA}" .
           docker run --rm --read-only \
             --add-host mailhog:127.0.0.1 \

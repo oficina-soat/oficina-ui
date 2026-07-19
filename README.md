@@ -38,6 +38,8 @@ O acesso às APIs usa o pipeline transversal documentado em [Arquitetura e guard
 
 O acesso publicado no `lab` usa um workload Nginx opcional no EKS, exposto pela rota de fallback do HTTP API compartilhado. O processo, as variáveis e os guardrails estão em [Deploy no lab](docs/deployment.md).
 
+Para `administrativo` e `recepcionista`, a opção **E-mails do lab** abre `/mailhog/` no mesmo origin da UI. O Nginx encaminha essa rota ao Service Kubernetes `mailhog:8025`, a mesma instância usada pelo port-forward canônico e pelo endpoint SMTP privado da Lambda de notificação; o Quality Gate valida esse upstream para evitar que a navegação volte a apontar para uma caixa paralela.
+
 ## Princípio arquitetural
 
 O frontend não contém regras de negócio. Ele coordena a experiência, chama as APIs e apresenta o resultado canônico. Autorização, cálculos, transições, estoque, Saga e pagamentos permanecem nos backends.

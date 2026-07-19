@@ -84,6 +84,15 @@ export class BillingApiAdapter implements BillingGateway {
     );
     return mapPayment(value);
   }
+  async resendBudgetEmail(budgetId: string, idempotencyKey: string): Promise<void> {
+    await firstValueFrom(
+      this.http.post<void>(
+        `${this.config.apiBaseUrl}/orcamentos/${encodeURIComponent(budgetId)}/notificacao/reenvio`,
+        {},
+        { context: idempotentCommandContext(idempotencyKey) },
+      ),
+    );
+  }
   approveBudget(command: BudgetDecision): Promise<Budget> {
     return this.decide(command, 'aprovacao');
   }
