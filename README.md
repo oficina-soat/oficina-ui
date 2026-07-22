@@ -53,6 +53,51 @@ flowchart LR
     API --> BILL[Billing Service]
 ```
 
+### Sessão e autorização
+
+```mermaid
+sequenceDiagram
+  actor U as Usuário
+  participant UI as oficina-ui
+  participant AU as Auth Lambda
+  participant API as APIs
+  U->>UI: autentica com CPF e senha
+  UI->>AU: solicita JWT
+  AU-->>UI: JWT e papéis
+  UI->>UI: mantém sessão limitada à aba
+  UI->>API: Bearer JWT
+  API-->>UI: dados e ações permitidas pelo backend
+  alt recarga na mesma aba
+    UI->>UI: restaura sessão válida
+  else token inválido ou expirado
+    UI->>UI: encerra sessão e volta ao login
+  end
+```
+
+### Ativação de usuário
+
+```mermaid
+sequenceDiagram
+  actor A as Administrador
+  actor U as Usuário
+  participant UI as oficina-ui
+  participant AU as Auth Lambda
+  A->>UI: solicita token para identidade pendente
+  UI->>AU: emite token com expiração e uso único
+  AU-->>UI: token exibido uma única vez
+  A-->>U: entrega por canal controlado
+  U->>UI: informa token e nova senha
+  UI->>AU: conclui ativação
+  alt token vigente e não consumido
+    AU-->>UI: credencial ativa
+    UI-->>U: direciona ao login
+  else token inválido
+    AU-->>UI: erro canônico
+  end
+```
+
+A UI apenas conduz os passos e apresenta estados retornados pelas APIs; validade de token, papéis e transições continuam nos backends, conforme [Arquitetura e guardrails](docs/architecture.md) e a [visão transversal da plataforma](../oficina-platform/README.md#fluxos-operacionais).
+
 ## Documentação
 
 - [Arquitetura e guardrails](docs/architecture.md)
